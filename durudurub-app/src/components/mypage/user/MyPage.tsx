@@ -1,0 +1,473 @@
+import { ArrowLeft, User, Mail, Calendar, MapPin, Edit2, Heart, Users, AlertTriangle, Crown, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { Navbar } from '@/app/components/Navbar';
+
+interface MyPageProps {
+  onBack: () => void;
+  user: any;
+  profileImage?: string | null;
+  onProfileImageUpdate?: (newImage: string | null) => void;
+  onNavigateToGroupsManagement?: () => void;
+  onNavigateToFavorites?: () => void;
+  onSignupClick?: () => void;
+  onLoginClick?: () => void;
+  onLogoClick?: () => void;
+  onNoticeClick?: () => void;
+  onMiniGameClick?: () => void;
+  onMyMeetingsClick?: () => void;
+  onLogout?: () => void;
+  onPaymentClick?: () => void;
+}
+
+export function MyPage({ 
+  onBack, 
+  user, 
+  profileImage: initialProfileImage, 
+  onProfileImageUpdate, 
+  onNavigateToGroupsManagement,
+  onNavigateToFavorites,
+  onSignupClick,
+  onLoginClick,
+  onLogoClick,
+  onNoticeClick,
+  onMiniGameClick,
+  onMyMeetingsClick,
+  onLogout,
+  onPaymentClick
+}: MyPageProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [profileImage, setProfileImage] = useState<string | null>(initialProfileImage || null);
+  
+  // 성별 영어 -> 한글 변환 함수
+  const convertGenderToKorean = (gender: string) => {
+    const genderMap: { [key: string]: string } = {
+      'male': '남성',
+      'female': '여성',
+      'other': '기타',
+      '남성': '남성',
+      '여성': '여성',
+      '기타': '기타'
+    };
+    return genderMap[gender?.toLowerCase()] || gender;
+  };
+
+  // 성별 한글 -> 영어 변환 함수
+  const convertGenderToEnglish = (gender: string) => {
+    const genderMap: { [key: string]: string } = {
+      '남성': 'male',
+      '여성': 'female',
+      '기타': 'other',
+      'male': 'male',
+      'female': 'female',
+      'other': 'other'
+    };
+    return genderMap[gender] || gender;
+  };
+
+  const [editedUser, setEditedUser] = useState({
+    nickname: user?.nickname || '사용자',
+    location: user?.location || '',
+    age: user?.age || '',
+    gender: convertGenderToKorean(user?.gender || ''),
+  });
+
+  const handleSave = () => {
+    // TODO: 서버에 프로필 업데이트 요청
+    console.log('프로필 업데이트:', editedUser);
+    console.log('프로필 이미지:', profileImage);
+    onProfileImageUpdate?.(profileImage);
+    setIsEditing(false);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // 파일 크기 체크 (5MB 제한)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('이미지 크기는 5MB 이하여야 합니다.');
+        return;
+      }
+
+      // 이미지 파일인지 확인
+      if (!file.type.startsWith('image/')) {
+        alert('이미지 파일만 업로드 가능합니다.');
+        return;
+      }
+
+      // 파일을 읽어서 미리보기
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FAF9F6]">
+      {/* 네비게이션 바 */}
+      <Navbar
+        onSignupClick={onSignupClick}
+        onLoginClick={onLoginClick}
+        onLogoClick={onLogoClick}
+        onNoticeClick={onNoticeClick}
+        onMyPageClick={() => {}} // 이미 마이페이지에 있으므로 빈 함수
+        onMiniGameClick={onMiniGameClick}
+        onMyMeetingsClick={onMyMeetingsClick}
+        user={user}
+        profileImage={profileImage}
+        onLogout={onLogout}
+      />
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* 왼쪽: 프로필 정보 */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* 멤버십 정보 카드 */}
+            <div className="bg-gradient-to-br from-[#00A651] to-[#00C766] rounded-2xl shadow-sm p-6 text-white overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold">멤버십 정보</h3>
+                  {user?.isPremium ? (
+                    <Crown className="w-6 h-6 text-yellow-300" />
+                  ) : (
+                    <Sparkles className="w-6 h-6 text-white/70" />
+                  )}
+                </div>
+
+                {user?.isPremium ? (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="bg-yellow-400 text-gray-900 text-xs font-bold px-3 py-1 rounded-full">
+                        PREMIUM
+                      </div>
+                    </div>
+                    <p className="text-white/90 text-sm mb-4">
+                      모든 프리미엄 기능을 이용하고 계십니다
+                    </p>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-white/90 rounded-full"></div>
+                        <span className="text-white/90">광고 없는 경험</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-white/90 rounded-full"></div>
+                        <span className="text-white/90">AI 검색 무제한</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-white/90 rounded-full"></div>
+                        <span className="text-white/90">프리미엄 배지</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-white/20">
+                      <p className="text-xs text-white/70">다음 결제일</p>
+                      <p className="text-sm font-semibold">2026년 2월 28일</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full">
+                        FREE
+                      </div>
+                    </div>
+                    <p className="text-white/90 text-sm mb-4">
+                      무료 플랜을 이용하고 계십니다
+                    </p>
+                    <div className="space-y-2 text-sm mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-white/50 rounded-full"></div>
+                        <span className="text-white/70">AI 검색 3회 제한</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-white/50 rounded-full"></div>
+                        <span className="text-white/70">광고 노출</span>
+                      </div>
+                    </div>
+                    <button className="w-full bg-white text-[#00A651] font-bold py-3 rounded-xl hover:bg-white/90 transition-colors shadow-lg mt-2" onClick={onPaymentClick}>
+                      프리미엄 구독하기
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 기본 정보 카드 */}
+            <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">기본 정보</h2>
+                {!isEditing ? (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="flex items-center text-[#00A651] hover:text-[#008f46] transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4 mr-1" />
+                    수정
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      className="px-4 py-2 bg-[#00A651] text-white rounded-lg hover:bg-[#008f46] transition-colors"
+                    >
+                      저장
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                {/* 프로필 사진 */}
+                <div className="flex items-center">
+                  {profileImage ? (
+                    <div
+                      className="w-20 h-20 rounded-full bg-cover bg-center"
+                      style={{ backgroundImage: `url(${profileImage})` }}
+                    ></div>
+                  ) : (
+                    <div className="w-20 h-20 bg-gradient-to-br from-[#00A651] to-[#008f46] rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                      {editedUser.nickname.charAt(0)}
+                    </div>
+                  )}
+                  {isEditing && (
+                    <label className="ml-4 text-sm text-[#00A651] hover:text-[#008f46] cursor-pointer">
+                      사진 변경
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+
+                {/* 닉네임 */}
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                    <User className="w-4 h-4 mr-2" />
+                    닉네임
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editedUser.nickname}
+                      onChange={(e) => setEditedUser({ ...editedUser, nickname: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A651]"
+                    />
+                  ) : (
+                    <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
+                      {editedUser.nickname}
+                    </div>
+                  )}
+                </div>
+
+                {/* 이메일 */}
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                    <Mail className="w-4 h-4 mr-2" />
+                    이메일
+                  </label>
+                  <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
+                    {user?.userId || 'user123'}
+                  </div>
+                </div>
+
+                {/* 지역 */}
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    활동 지역
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editedUser.location}
+                      onChange={(e) => setEditedUser({ ...editedUser, location: e.target.value })}
+                      placeholder="예: 서울특별시"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A651]"
+                    />
+                  ) : (
+                    <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
+                      {editedUser.location || <span className="text-gray-400">미입력</span>}
+                    </div>
+                  )}
+                </div>
+
+                {/* 나이와 성별 */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* 나이 */}
+                  <div>
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                      <User className="w-4 h-4 mr-2" />
+                      나이
+                    </label>
+                    {isEditing ? (
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={editedUser.age}
+                          onChange={(e) => setEditedUser({ ...editedUser, age: e.target.value })}
+                          placeholder="예: 25"
+                          min="1"
+                          max="150"
+                          className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A651]"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                          세
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
+                        {editedUser.age ? `${editedUser.age}세` : <span className="text-gray-400">미입력</span>}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 성별 */}
+                  <div>
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                      <User className="w-4 h-4 mr-2" />
+                      성별
+                    </label>
+                    {isEditing ? (
+                      <select
+                        value={editedUser.gender}
+                        onChange={(e) => setEditedUser({ ...editedUser, gender: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A651] bg-white"
+                      >
+                        <option value="">선택하세요</option>
+                        <option value="남성">남성</option>
+                        <option value="여성">여성</option>
+                        <option value="기타">기타</option>
+                      </select>
+                    ) : (
+                      <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
+                        {editedUser.gender || <span className="text-gray-400">선택안함</span>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 가입일 */}
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    가입일
+                  </label>
+                  <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
+                    2025년 1월 20일
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 활동 통계 */}
+            <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 mb-6">활동 통계</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-[#FAF9F6] rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">참여 중인 모임</p>
+                      <p className="text-2xl font-bold text-[#00A651] mt-1">3개</p>
+                    </div>
+                    <Users className="w-8 h-8 text-[#00A651] opacity-20" />
+                  </div>
+                </div>
+                <div className="bg-[#FAF9F6] rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">즐겨찾기</p>
+                      <p className="text-2xl font-bold text-[#00A651] mt-1">5개</p>
+                    </div>
+                    <Heart className="w-8 h-8 text-[#00A651] opacity-20" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 오른쪽: 빠른 링크 */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">빠른 메뉴</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={onNavigateToGroupsManagement}
+                  className="w-full text-left px-4 py-3 rounded-lg hover:bg-[#FAF9F6] transition-colors text-gray-700 hover:text-[#00A651]"
+                >
+                  내 모임 관리
+                </button>
+                <button
+                  onClick={onNavigateToFavorites}
+                  className="w-full text-left px-4 py-3 rounded-lg hover:bg-[#FAF9F6] transition-colors text-gray-700 hover:text-[#00A651]"
+                >
+                  즐겨찾기 목록
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">계정 관리</h3>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 transition-colors text-red-600"
+              >
+                회원 탈퇴
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 회원 탈퇴 모달 */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-md mx-4">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">회원 탈퇴</h2>
+              <p className="text-gray-700 mb-2">회원 탈퇴하면 되돌릴 수 없습니다.</p>
+              <p className="text-gray-700 mb-6">정말 탈퇴하시겠습니까?</p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={() => {
+                    // TODO: 실제 회원 탈퇴 처리
+                    console.log('회원 탈퇴 처리');
+                    setShowDeleteModal(false);
+                    // 로그아웃 처리
+                    onLogout?.();
+                    // 메인 화면으로 이동
+                    onLogoClick?.();
+                  }}
+                  className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  탈퇴하기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

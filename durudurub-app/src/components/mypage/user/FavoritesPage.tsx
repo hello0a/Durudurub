@@ -1,0 +1,257 @@
+import { Heart, ArrowLeft, Users, MapPin, Calendar, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Navbar } from '@/app/components/Navbar';
+import { projectId, publicAnonKey } from '/utils/supabase/info';
+import { mockCommunities } from '@/app/data/mockCommunities';
+
+// 샘플 즐겨찾기 데이터 (처음 10개 모임)
+const sampleFavorites = mockCommunities.slice(0, 10);
+
+interface FavoritesPageProps {
+  onBack: () => void;
+  user: any;
+  accessToken?: string | null;
+  profileImage?: string | null;
+  onSignupClick?: () => void;
+  onLoginClick?: () => void;
+  onLogoClick?: () => void;
+  onNoticeClick?: () => void;
+  onMyPageClick?: () => void;
+  onMiniGameClick?: () => void;
+  onMyMeetingsClick?: () => void;
+  onLogout?: () => void;
+  onCommunityClick?: (communityId: string) => void;
+  onExploreClick?: () => void;
+}
+
+interface Community {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  memberCount: number;
+  maxMembers: number;
+  imageUrl?: string;
+  createdAt: string;
+}
+
+export function FavoritesPage({
+  onBack,
+  user,
+  accessToken,
+  profileImage,
+  onSignupClick,
+  onLoginClick,
+  onLogoClick,
+  onNoticeClick,
+  onMyPageClick,
+  onMiniGameClick,
+  onMyMeetingsClick,
+  onLogout,
+  onCommunityClick,
+  onExploreClick,
+}: FavoritesPageProps) {
+  const [favorites, setFavorites] = useState<Community[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadFavorites();
+  }, [user, accessToken]);
+
+  const loadFavorites = async () => {
+    if (!accessToken || !user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // 샘플 데이터 사용 (백엔드 연결 전까지)
+      setTimeout(() => {
+        const formattedFavorites = sampleFavorites.map(community => ({
+          id: community.id,
+          name: community.title,
+          description: community.description,
+          category: community.category,
+          memberCount: community.memberCount,
+          maxMembers: community.maxMembers,
+          imageUrl: community.imageUrl,
+          createdAt: community.createdAt
+        }));
+        setFavorites(formattedFavorites);
+        setLoading(false);
+      }, 500);
+      
+      // 백엔드 연결 시 사용할 코드 (주석 처리)
+      /*
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/favorites`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setFavorites(data.favorites || []);
+        }
+      }
+      */
+    } catch (error) {
+      console.error('즐겨찾기 목록을 불러오는 중 오류:', error);
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveFavorite = async (communityId: string) => {
+    if (!accessToken) return;
+
+    // 로컬에서 즐겨찾기 목록에서 제거
+    setFavorites((prev) => prev.filter((c) => c.id !== communityId));
+    
+    // 백엔드 연결 시 사용할 코드 (주석 처리)
+    /*
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/communities/${communityId}/favorite`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && !data.isFavorite) {
+          setFavorites((prev) => prev.filter((c) => c.id !== communityId));
+        }
+      }
+    } catch (error) {
+      console.error('즐겨찾기 제거 중 오류:', error);
+    }
+    */
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FAF9F6]">
+      {/* 네비게이션 바 */}
+      <Navbar
+        onSignupClick={onSignupClick}
+        onLoginClick={onLoginClick}
+        onLogoClick={onLogoClick}
+        onNoticeClick={onNoticeClick}
+        onMyPageClick={onMyPageClick}
+        onMiniGameClick={onMiniGameClick}
+        onMyMeetingsClick={onMyMeetingsClick}
+        user={user}
+        profileImage={profileImage}
+        onLogout={onLogout}
+      />
+
+      {/* 메인 컨텐츠 */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-12 h-12 text-[#00A651] animate-spin mb-4" />
+            <p className="text-gray-600">즐겨찾기 목록을 불러오는 중...</p>
+          </div>
+        ) : favorites.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-sm p-12 text-center border border-gray-100">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Heart className="w-10 h-10 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              즐겨찾기한 모임이 없습니다
+            </h3>
+            <p className="text-gray-600 mb-6">
+              관심있는 모임을 즐겨찾기에 추가해보세요!
+            </p>
+            <button
+              onClick={onExploreClick}
+              className="px-6 py-3 bg-[#00A651] text-white rounded-lg hover:bg-[#008f46] transition-colors font-medium"
+            >
+              모임 둘러보기
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="mb-6">
+              <p className="text-gray-600">
+                총 <span className="font-bold text-[#00A651]">{favorites.length}개</span>의
+                모임을 즐겨찾기했습니다.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {favorites.map((community) => (
+                <div
+                  key={community.id}
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  {/* 커뮤니티 이미지 */}
+                  <div className="relative h-48 bg-gradient-to-br from-[#00A651] to-[#008f46]">
+                    {community.imageUrl ? (
+                      <img
+                        src={community.imageUrl}
+                        alt={community.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white text-4xl font-bold">
+                        {community.name.charAt(0)}
+                      </div>
+                    )}
+                    {/* 즐겨찾기 버튼 */}
+                    <button
+                      onClick={() => handleRemoveFavorite(community.id)}
+                      className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors shadow-lg"
+                    >
+                      <Heart className="w-5 h-5 text-red-500 fill-red-500" />
+                    </button>
+                  </div>
+
+                  {/* 커뮤니티 정보 */}
+                  <div className="p-6">
+                    <div className="mb-4">
+                      <span className="inline-block px-3 py-1 bg-[#00A651]/10 text-[#00A651] rounded-full text-sm font-medium mb-3">
+                        {community.category}
+                      </span>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {community.name}
+                      </h3>
+                      <p className="text-gray-600 text-sm line-clamp-2">
+                        {community.description}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                      <div className="flex items-center gap-1">
+                        <Users className="w-4 h-4" />
+                        <span>
+                          {community.memberCount}/{community.maxMembers}명
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => onCommunityClick?.(community.id)}
+                      className="w-full py-3 bg-[#00A651] text-white rounded-lg hover:bg-[#008f46] transition-colors font-medium"
+                    >
+                      모임 보기
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
