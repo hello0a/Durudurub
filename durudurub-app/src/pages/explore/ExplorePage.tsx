@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, MapPin, Users, Calendar, Heart, ArrowLeft, X, LogIn } from 'lucide-react';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
-import { mockCommunities, Community } from '@/data/mockCommunities';
 import { Navbar } from '@/components/header/Navbar';
 import { BottomNavigation } from '@/components/BottomNavigation';
-import { Footer } from '@/components/footer/Footer';
 
 interface ExplorePageProps {
   onBack: () => void;
@@ -22,24 +19,25 @@ interface ExplorePageProps {
   profileImage: string | null;
   onLogout: () => void;
   initialSearchQuery?: string;
+  initialCategory?: string;
 }
 
 const categories = [
   { id: 'all', name: '전체', icon: '🔍' },
-  { id: '운동', name: '운동', icon: '⚽' },
-  { id: '문화/예술', name: '문화/예술', icon: '🎨' },
-  { id: '요리/음식', name: '요리/음식', icon: '🍳' },
-  { id: '여행', name: '여행', icon: '✈️' },
-  { id: '독서', name: '독서', icon: '📚' },
-  { id: '스터디', name: '스터디', icon: '💼' },
+  { id: '자기계발', name: '자기계발', icon: '📖' },
+  { id: '스포츠', name: '스포츠', icon: '⚽' },
+  { id: '푸드', name: '푸드', icon: '🍳' },
   { id: '게임', name: '게임', icon: '🎮' },
+  { id: '동네친구', name: '동네친구', icon: '👋' },
+  { id: '여행', name: '여행', icon: '✈️' },
+  { id: '예술', name: '예술', icon: '🎨' },
   { id: '기타', name: '기타', icon: '🌟' }
 ];
 
-export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupClick, onLogoClick, onNoticeClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, onPaymentClick, user, accessToken, profileImage, onLogout, initialSearchQuery }: ExplorePageProps) {
-  const [communities, setCommunities] = useState<Community[]>(mockCommunities);
-  const [filteredCommunities, setFilteredCommunities] = useState<Community[]>(mockCommunities);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupClick, onLogoClick, onNoticeClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, onPaymentClick, user, accessToken, profileImage, onLogout, initialSearchQuery, initialCategory }: ExplorePageProps) {
+  const [communities, setCommunities] = useState<any[]>([]);
+  const [filteredCommunities, setFilteredCommunities] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory || 'all');
   const [searchTerm, setSearchTerm] = useState(typeof initialSearchQuery === 'string' ? initialSearchQuery : '');
   const [loading, setLoading] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -47,12 +45,8 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
   const [sortOrder, setSortOrder] = useState<'latest' | 'popular' | 'name'>('latest');
 
   useEffect(() => {
-    // 백엔드 데이터 대신 목업 데이터 사용
-    // loadCommunities();
-    if (user && accessToken) {
-      loadFavorites();
-    }
-  }, [user, accessToken]);
+    loadCommunities()
+  }, []);
 
   useEffect(() => {
     filterCommunities();
@@ -61,62 +55,45 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
   const loadCommunities = async () => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/communities`,
+      const res = await fetch(
+        '/api/clubs',
         {
-          headers: { 'Authorization': `Bearer ${publicAnonKey}` }
+          credentials: 'include'
         }
       );
-      const data = await response.json();
-      if (data.success) {
-        setCommunities(data.communities);
-      }
+      const data = await res.json();
+      setCommunities(data.clubs || [])
     } catch (error) {
-      console.error('Failed to load communities:', error);
+      console.error('커뮤니티 조회 실패 : ', error);
     } finally {
       setLoading(false);
     }
   };
 
   const loadFavorites = async () => {
-    if (!accessToken) return;
-    
-    try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/user/favorites`,
-        {
-          headers: { 'Authorization': `Bearer ${accessToken}` }
-        }
-      );
-      const data = await response.json();
-      if (data.success) {
-        setFavorites(new Set(data.favorites));
-      }
-    } catch (error) {
-      console.error('Failed to load favorites:', error);
-    }
+    // 보류 (계속 오류남)
   };
+
+  // HTML 태그 제거 헬퍼
+  const stripHtml = (html: string) => (html || '').replace(/<[^>]*>/g, '');
 
   const filterCommunities = () => {
     let filtered = communities;
 
     // 카테고리 필터
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(c => c.category === selectedCategory);
+      filtered = filtered.filter(c => c.category?.name === selectedCategory);
     }
 
     // 검색어 필터
     if (searchTerm && typeof searchTerm === 'string') {
       const lowerSearchTerm = searchTerm.toLowerCase();
       filtered = filtered.filter(c =>
-        c.title.toLowerCase().includes(lowerSearchTerm) ||
-        c.description.toLowerCase().includes(lowerSearchTerm) ||
-        c.location.toLowerCase().includes(lowerSearchTerm)
+        (c.title || '').toLowerCase().includes(lowerSearchTerm) ||
+        stripHtml(c.description).toLowerCase().includes(lowerSearchTerm) ||
+        (c.location || '').toLowerCase().includes(lowerSearchTerm)
       );
     }
-
-    // 최신순 정렬
-    filtered = filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     setFilteredCommunities(filtered);
   };
@@ -124,33 +101,15 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
   const toggleFavorite = async (communityId: string, e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (!user || !accessToken) {
-      setShowLoginModal(true);
-      return;
-    }
-
-    const isFavorited = favorites.has(communityId);
-
+    if (!user) { setShowLoginModal(true); return; }
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/user/favorites/${communityId}`,
-        {
-          method: isFavorited ? 'DELETE' : 'POST',
-          headers: { 'Authorization': `Bearer ${accessToken}` }
-        }
-      );
-
-      if (response.ok) {
-        const newFavorites = new Set(favorites);
-        if (isFavorited) {
-          newFavorites.delete(communityId);
-        } else {
-          newFavorites.add(communityId);
-        }
-        setFavorites(newFavorites);
-      }
-    } catch (error) {
-      console.error('Failed to toggle favorite:', error);
+      await fetch(`/api/likes/club/${communityId}`, { method: 'POST', credentials: 'include' });
+      const newFavs = new Set(favorites);
+      if (newFavs.has(communityId)) newFavs.delete(communityId);
+      else newFavs.add(communityId);
+      setFavorites(newFavs);
+    } catch (e) {
+      console.error('좋아요 반영 실패 : ', e);
     }
   };
 
@@ -250,34 +209,34 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCommunities.map((community) => (
               <div
-                key={community.id}
-                onClick={() => onCommunityClick(community.id)}
+                key={community.no}
+                onClick={() => onCommunityClick(String(community.no))}
                 className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-[#00A651] transform hover:-translate-y-1"
               >
                 {/* 데스크톱 버전 - 세로형 레이아웃 */}
                 <div className="hidden md:block">
                   {/* 이미지 */}
                   <div className="relative h-48 bg-gradient-to-br from-[#00A651]/10 to-[#00A651]/20 flex items-center justify-center">
-                    {community.imageUrl ? (
+                    {community.thumbnailImg ? (
                       <img
-                        src={community.imageUrl}
+                        src={community.thumbnailImg}
                         alt={community.title}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="text-6xl">
-                        {categories.find(c => c.id === community.category)?.icon || '🌟'}
+                        {categories.find(c => c.id === community.category?.name)?.icon || '🌟'}
                       </div>
                     )}
                     
                     {/* 즐겨찾기 버튼 */}
                     <button
-                      onClick={(e) => toggleFavorite(community.id, e)}
+                      onClick={(e) => toggleFavorite(String(community.no), e)}
                       className="absolute top-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110"
                     >
                       <Heart
                         className={`w-5 h-5 ${
-                          favorites.has(community.id)
+                          favorites.has(String(community.no))
                             ? 'fill-red-500 text-red-500'
                             : 'text-gray-400'
                         }`}
@@ -289,11 +248,11 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
                   <div className="p-5">
                     <div className="flex items-center justify-between mb-2">
                       <span className="px-3 py-1 bg-[#00A651]/10 text-[#00A651] text-xs font-semibold rounded-full">
-                        {community.category}
+                        {community.category?.name}
                       </span>
                       <div className="flex items-center text-sm text-gray-500">
                         <Users className="w-4 h-4 mr-1" />
-                        {community.memberCount}/{community.maxMembers}
+                        {community.currentMembers}/{community.maxMembers}
                       </div>
                     </div>
 
@@ -302,7 +261,7 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
                     </h3>
 
                     <p className="text-sm text-gray-600 mb-3 line-clamp-2 min-h-[2.5rem]">
-                      {community.description}
+                      {stripHtml(community.description)}
                     </p>
 
                     <div className="flex items-center text-sm text-gray-500 mb-2">
@@ -313,10 +272,10 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
                     <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                       <div className="flex items-center">
                         <div className="w-8 h-8 bg-[#00A651] rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                          {community.hostName.charAt(0)}
+                          {(community.host?.nickname || '호스트').charAt(0)}
                         </div>
                         <span className="ml-2 text-sm text-gray-700 font-medium">
-                          {community.hostName}
+                          {community.host?.nickname || '호스트'}
                         </span>
                       </div>
                     </div>
@@ -327,26 +286,26 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
                 <div className="md:hidden flex gap-3 p-3">
                   {/* 왼쪽: 썸네일 */}
                   <div className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-[#00A651]/10 to-[#00A651]/20 flex items-center justify-center">
-                    {community.imageUrl ? (
+                    {community.thumbnailImg ? (
                       <img
-                        src={community.imageUrl}
+                        src={community.thumbnailImg}
                         alt={community.title}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="text-3xl">
-                        {categories.find(c => c.id === community.category)?.icon || '🌟'}
+                        {categories.find(c => c.id === community.category?.name)?.icon || '🌟'}
                       </div>
                     )}
                     
                     {/* 즐겨찾기 버튼 */}
                     <button
-                      onClick={(e) => toggleFavorite(community.id, e)}
+                      onClick={(e) => toggleFavorite(String(community.no), e)}
                       className="absolute top-1 right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md"
                     >
                       <Heart
                         className={`w-4 h-4 ${
-                          favorites.has(community.id)
+                          favorites.has(String(community.no))
                             ? 'fill-red-500 text-red-500'
                             : 'text-gray-400'
                         }`}
@@ -363,7 +322,7 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
 
                     {/* 설명 */}
                     <p className="text-xs text-gray-600 line-clamp-1 mb-2">
-                      {community.description}
+                      {stripHtml(community.description)}
                     </p>
 
                     {/* 장소 */}
@@ -376,15 +335,15 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
                     <div className="flex items-center justify-between">
                       <div className="flex items-center min-w-0 flex-1">
                         <div className="w-5 h-5 bg-[#00A651] rounded-full flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0">
-                          {community.hostName.charAt(0)}
+                          {(community.host?.nickname || '호스트').charAt(0)}
                         </div>
                         <span className="ml-1.5 text-xs text-gray-700 font-medium truncate">
-                          {community.hostName}
+                          {community.host?.nickname || '호스트'}
                         </span>
                       </div>
                       <div className="flex items-center text-xs text-gray-500 ml-2 flex-shrink-0">
                         <Users className="w-3 h-3 mr-1" />
-                        {community.memberCount}/{community.maxMembers}
+                        {community.currentMembers}/{community.maxMembers}
                       </div>
                     </div>
                   </div>

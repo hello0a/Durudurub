@@ -12,7 +12,7 @@ const Home = () => {
 
   const handleCategoryClick = (category: string) => {
     console.log(category)
-    navigate(`/explore?q=${encodeURIComponent(category)}`)
+    navigate(`/explore?category=${encodeURIComponent(category)}`)
   }
 
   const handleMoreClick = () => {

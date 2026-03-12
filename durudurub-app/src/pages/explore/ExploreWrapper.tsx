@@ -22,6 +22,7 @@ export default function ExploreWrapper() {
       accessToken={null}
       profileImage={null}
       initialSearchQuery={searchParams.get('q') || ''}
+      initialCategory={searchParams.get('category') || ''}
     />
   );
 }
