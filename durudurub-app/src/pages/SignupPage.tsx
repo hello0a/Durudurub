@@ -1,7 +1,7 @@
+import { Eye, EyeOff, Upload, X } from 'lucide-react';
 import { useState } from 'react';
-import { Eye, EyeOff, X, Upload, Check } from 'lucide-react';
-import { projectId, publicAnonKey } from 'utils/supabase/info';
 import { toast, Toaster } from 'sonner';
+import api from "../api/axios";
 
 interface SignupPageProps {
   onClose: () => void;
@@ -71,45 +71,40 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
     setSuccessMessage('');
 
     try {
-      // 서버에 회원가입 요청
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/signup`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${publicAnonKey}`,
-          },
-          body: JSON.stringify({
-            userId: formData.userId,
-            password: formData.password,
-            nickname: formData.nickname,
-            age: formData.age,
-            gender: formData.gender,
-            address: formData.address,
-            profileImage: profileImage,
-          }),
-        }
-      );
 
-      const data = await response.json();
+    const res = await api.post("/api/users/signup", {
+      userId: formData.userId,
+      password: formData.password,
+      nickname: formData.nickname,
+      age: formData.age,
+      gender: formData.gender,
+      address: formData.address,
+      profileImage: profileImage
+    });
 
-      if (data.success) {
-        setSuccessMessage('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
-        // 2초 후 로그인 페이지로 이동
-        setTimeout(() => {
-          onLoginClick();
-        }, 2000);
-      } else {
-        setErrorMessage(data.error || '회원가입에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('회원가입 오류:', error);
-      setErrorMessage('서버 연결에 실패했습니다. 다시 시도해주세요.');
-    } finally {
-      setIsLoading(false);
+    const data = res.data;
+
+    if (data.success) {
+
+      setSuccessMessage("회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.");
+
+      setTimeout(() => {
+        onLoginClick();
+      }, 2000);
+
+    } else {
+
+      setErrorMessage(data.error || "회원가입 실패");
+
     }
-  };
+
+  } catch (error) {
+
+    console.error(error);
+    setErrorMessage("서버 연결 실패");
+
+  }
+}
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -170,47 +165,48 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
 
   // 이메일 중복 체크 함수
   const handleEmailCheck = async () => {
+
     if (!formData.userId) {
-      toast.error('이메일을 입력해주세요');
+      toast.error("이메일을 입력해주세요");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!emailRegex.test(formData.userId)) {
-      toast.error('올바른 이메일 형식을 입력해주세요');
+      toast.error("올바른 이메일 형식이 아닙니다");
       return;
     }
 
-    setEmailCheckStatus('checking');
+    setEmailCheckStatus("checking");
 
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/check-email`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${publicAnonKey}`,
-          },
-          body: JSON.stringify({ email: formData.userId }),
-        }
-      );
 
-      const data = await response.json();
+      const res = await api.get("/api/user/check-id", {
+        params: { userId: formData.userId }
+      });
 
-      if (data.available) {
-        setEmailCheckStatus('available');
-        toast.success('사용 가능한 이메일입니다');
+      if (!res.data) {
+
+        setEmailCheckStatus("available");
+        toast.success("사용 가능한 이메일입니다");
+
       } else {
-        setEmailCheckStatus('taken');
-        toast.error('이미 사용 중인 이메일입니다');
+
+        setEmailCheckStatus("taken");
+        toast.error("이미 사용 중인 이메일입니다");
+
       }
+
     } catch (error) {
-      console.error('이메일 중복 체크 오류:', error);
-      toast.error('중복 체크에 실패했습니다');
-      setEmailCheckStatus('idle');
+
+      console.error(error);
+      toast.error("중복 체크 실패");
+      setEmailCheckStatus("idle");
+
     }
-  };
+
+};
 
   // 닉네임 중복 체크 함수
   const handleNicknameCheck = async () => {
@@ -223,12 +219,12 @@ export function SignupPage({ onClose, onLoginClick }: SignupPageProps) {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/check-nickname`,
+        `https://${<></>}.supabase.co/functions/v1/make-server-12a2c4b5/check-nickname`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${publicAnonKey}`,
+            'Authorization': `Bearer ${<></>}`,
           },
           body: JSON.stringify({ nickname: formData.nickname }),
         }

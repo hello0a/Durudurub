@@ -106,44 +106,6 @@ export function LoginPage({ onClose, onSignupClick, onForgotPasswordClick, onLog
     }));
   };
 
-  // test 계정 생성 함수
-  const handleCreateTestAccount = async () => {
-    setIsCreatingTestAccount(true);
-    setTestAccountMessage('');
-    setErrorMessage('');
-
-    try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/init-test-account`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${publicAnonKey}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.success) {
-        setTestAccountMessage('✅ test 계정이 생성되었습니다! (이메일: test / 비밀번호: 123456)');
-        // 자동으로 폼에 입력
-        setFormData({
-          userId: 'test',
-          password: '123456',
-          rememberMe: false,
-        });
-      } else {
-        setErrorMessage(data.error || 'test 계정 생성에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('test 계정 생성 오류:', error);
-      setErrorMessage('서버 연결에 실패했습니다.');
-    } finally {
-      setIsCreatingTestAccount(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#FBF7F0] flex items-center justify-center px-4 py-12">
@@ -421,17 +383,7 @@ export function LoginPage({ onClose, onSignupClick, onForgotPasswordClick, onLog
             </p>
           </div>
 
-          {/* test 계정 생성 버튼 (개발/테스트용) */}
-          <div className="text-center mt-4 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={handleCreateTestAccount}
-              disabled={isCreatingTestAccount}
-              className="text-xs text-gray-500 hover:text-[#00A651] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isCreatingTestAccount ? '생성 중...' : '🧪 테스트 계정 생성하기 (개발용)'}
-            </button>
-          </div>
+          
         </form>
       </div>
     </div>

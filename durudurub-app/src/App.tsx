@@ -1,9 +1,10 @@
-import { Toaster } from "sonner";
-import Home from "./pages/Home";
 import { Route, Routes } from "react-router-dom";
-import { ExplorePage } from "./pages/explore/ExplorePage";
-import ExploreWrapper from "./pages/explore/ExploreWrapper";
+import { Toaster } from "sonner";
 import ClubDetailWrapper from "./pages/communityDetail/ClubDetailWrapper";
+import ExploreWrapper from "./pages/explore/ExploreWrapper";
+import Home from "./pages/Home";
+import { SignupPage } from "./pages/SignupPage";
+import { LoginPage } from "./pages/login/LoginPage";
 
 
 export default function App() {
@@ -14,7 +15,27 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/explore" element={<ExploreWrapper />} />
         <Route path="/club/:id" element={<ClubDetailWrapper />} />
+
+        <Route
+          path="/login"
+          element={
+            <LoginPage
+              onClose={() => {}}
+              onSignupClick={() => {}}
+            />
+          }
+        />
+
+        <Route
+          path="/signup"
+          element={
+            <SignupPage
+              onClose={() => {}}
+              onLoginClick={() => {}}
+            />
+          }
+        />
       </Routes>
     </>
   );
-}
+} 
