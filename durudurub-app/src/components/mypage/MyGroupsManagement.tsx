@@ -1,7 +1,7 @@
 import { ArrowLeft, Users, Crown, Clock, Trash2, UserCheck, UserX, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { useState } from 'react';
 import { Navbar } from '@/components/header/Navbar';
-import { BottomNavigation } from '@/components/BottomNavigation';
+import { BottomNavigation } from '@/components/footer/BottomNavigation';
 import { toast, Toaster } from 'sonner';
 
 interface MyGroupsManagementProps {

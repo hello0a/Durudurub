@@ -1,6 +1,6 @@
 import { ArrowLeft, Heart, MapPin, Calendar, Users, X, Lock, Plus, Trash2 } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
-import { BottomNavigation } from '@/components/BottomNavigation';
+import { BottomNavigation } from '@/components/footer/BottomNavigation';
 import { useState } from 'react';
 
 interface CategoryPageProps {

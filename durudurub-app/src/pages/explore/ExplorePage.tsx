@@ -3,7 +3,7 @@ import { Search, MapPin, Users, Calendar, Heart, ArrowLeft, X, LogIn } from 'luc
 import { projectId, publicAnonKey } from '/utils/supabase/info';
 import { mockCommunities, Community } from '@/data/mockCommunities';
 import { Navbar } from '@/components/header/Navbar';
-import { BottomNavigation } from '@/components/BottomNavigation';
+import { BottomNavigation } from '@/components/footer/BottomNavigation';
 import { Footer } from '@/components/footer/Footer';
 
 interface ExplorePageProps {

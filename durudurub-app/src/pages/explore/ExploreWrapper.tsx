@@ -1,6 +1,8 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ExplorePage } from './ExplorePage';
 
+
+// 기존 explore
 export default function ExploreWrapper() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
