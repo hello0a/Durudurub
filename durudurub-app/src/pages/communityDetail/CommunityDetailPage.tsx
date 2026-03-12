@@ -3,10 +3,11 @@ import { useState, useEffect, useRef } from 'react';
 import { projectId, publicAnonKey } from '/utils/supabase/info';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { EditCommunityModal } from '@/app/components/EditCommunityModal';
+
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { toast } from 'sonner';
+import { EditCommunityModal } from '../communityEdit/EditCommunityModal';
 
 // 커스텀 마커 아이콘 생성
 const customIcon = L.divIcon({
@@ -109,7 +110,7 @@ export function CommunityDetailPage({
   const [reportDetails, setReportDetails] = useState<string>('');
   const [reportedUsers, setReportedUsers] = useState<Set<string>>(new Set());
   const [showMemberListModal, setShowMemberListModal] = useState(false);
-  const [members] = useState([
+  const [members, setMembers] = useState([
     { id: 1, name: hostName, role: 'leader', joinedDate: '2025-12-01' },
     { id: 2, name: '김민수', role: 'member', joinedDate: '2025-12-15' },
     { id: 3, name: '박지은', role: 'member', joinedDate: '2026-01-05' },

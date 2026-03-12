@@ -1,7 +1,6 @@
 package com.aloha.durudurub.dto;
 
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 
 import lombok.Data;

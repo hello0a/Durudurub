@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Search, MapPin, Users, Calendar, Heart, ArrowLeft, X, LogIn } from 'lucide-react';
 import { projectId, publicAnonKey } from '/utils/supabase/info';
-import { mockCommunities, Community } from '@/app/data/mockCommunities';
-import { Navbar } from '@/app/components/Navbar';
-import { BottomNavigation } from '@/app/components/BottomNavigation';
-import { Footer } from '@/app/components/Footer';
+import { mockCommunities, Community } from '@/data/mockCommunities';
+import { Navbar } from '@/components/header/Navbar';
+import { BottomNavigation } from '@/components/BottomNavigation';
+import { Footer } from '@/components/footer/Footer';
 
 interface ExplorePageProps {
   onBack: () => void;

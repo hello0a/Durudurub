@@ -1,6 +1,6 @@
 import { Heart, ArrowLeft, Users, MapPin, Calendar, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Navbar } from '@/app/components/Navbar';
+import { Navbar } from '@/components/Navbar';
 import { BottomNavigation } from '@/app/components/BottomNavigation';
 import { projectId, publicAnonKey } from '/utils/supabase/info';
 import { mockCommunities } from '@/app/data/mockCommunities';
