@@ -57,8 +57,8 @@ export function LoginPage({ onClose, onSignupClick, onForgotPasswordClick, onLog
           isAdmin: data.role === 'ROLE_ADMIN',
         };
 
-        localStorage.setItem("accessToken", data.token);
-        localStorage.setItem("user", JSON.stringify(loginUser));
+        sessionStorage.setItem("accessToken", data.token);
+        sessionStorage.setItem("user", JSON.stringify(loginUser));
 
         if (formData.rememberMe) {
           localStorage.setItem("savedUserId", formData.userId);
