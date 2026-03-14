@@ -1,12 +1,15 @@
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 import { useState, useEffect } from 'react';
 import { CommunityDetailPage } from './CommunityDetailPage';
+import { useApp } from '@/contexts/AppContext';
 
 export default function ClubDetailWrapper() {
 
   const navigate = useNavigate();
 
   const { id } = useParams<{ id: string }>();
+
+  const { user, accessToken } = useApp();
 
   const [club, setClub] = useState<any>(null);
 
@@ -15,7 +18,11 @@ export default function ClubDetailWrapper() {
   useEffect(() => {
     const fetchClub = async () => {
       try {
-        const res = await fetch(`/api/clubs/${id}`, { credentials: 'include' });
+        const headers: Record<string, string> = {};
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
+        }
+        const res = await fetch(`/api/clubs/${id}`, { headers });
         if (!res.ok) {
           navigate('/explore');
           return;
@@ -29,7 +36,7 @@ export default function ClubDetailWrapper() {
       }
     };
     fetchClub();
-  }, [id]);
+  }, [id, accessToken]);
 
   if (loading) {
     return (
@@ -84,8 +91,8 @@ export default function ClubDetailWrapper() {
       location={c.location || ''}
       hostName={c.host?.username || '호스트'}
       hostId={c.host?.userId}
-      participants={{ current: c.currentMembers || 0, max: c.maxMembers || 0 }}
-      user={null}
+      participants={{ current: mappedMembers.length || 0, max: c.maxMembers || 0 }}
+      user={user}
       onBack={() => navigate(-1)}
       onLoginClick={() => navigate('/login')}
       initialMembers={mappedMembers}
@@ -95,6 +102,11 @@ export default function ClubDetailWrapper() {
       lng={c.lng || null}
       likeCount={c.likeCount || 0}
       isLiked={c.liked || false}
+      initialMemberStatus={
+        club.myMembership?.status === 'APPROVED' ? 'approved'
+        : club.myMembership?.status === 'PENDING' ? 'pending'
+        : 'none'
+      }
     />
   );
 }

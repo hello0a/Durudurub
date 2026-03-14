@@ -55,12 +55,10 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
   const loadCommunities = async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        '/api/clubs',
-        {
-          credentials: 'include'
-        }
-      );
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch('/api/clubs', { headers });
       const data = await res.json();
       setCommunities(data.clubs || [])
     } catch (error) {
@@ -103,7 +101,10 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
 
     if (!user) { setShowLoginModal(true); return; }
     try {
-      await fetch(`/api/likes/club/${communityId}`, { method: 'POST', credentials: 'include' });
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      await fetch(`/api/likes/club/${communityId}`, { method: 'POST', headers });
       const newFavs = new Set(favorites);
       if (newFavs.has(communityId)) newFavs.delete(communityId);
       else newFavs.add(communityId);

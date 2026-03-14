@@ -66,6 +66,7 @@ interface CommunityDetailPageProps {
   lng?: number | null;
   likeCount?: number;
   isLiked?: boolean;
+  initialMemberStatus?: 'none' | 'pending' | 'approved';
 }
 
 interface Comment {
@@ -111,6 +112,7 @@ export function CommunityDetailPage({
   lng: propLng,
   likeCount: propLikeCount,
   isLiked: propIsLiked,
+  initialMemberStatus,
 }: CommunityDetailPageProps) {
   const [isLiked, setIsLiked] = useState(propIsLiked || false);
   const [favoriteCount, setFavoriteCount] = useState(propLikeCount || 0);
@@ -252,21 +254,26 @@ export function CommunityDetailPage({
 
   // 컴포넌트 마운트 시 멤버십 상태 조회
   useEffect(() => {
-    // 백엔드 API를 통해 멤버십 상태 확인 (현재 user=null이므로 none)
     if (!user) {
       setMemberStatus('none');
       return;
     }
-    // TODO: 로그인 구현 후 /api/clubs/{id}/membership 엔드포인트 사용
-    setMemberStatus('none');
-  }, [user]);
+    if (initialMemberStatus) {
+      setMemberStatus(initialMemberStatus);
+    } else {
+      setMemberStatus('none');
+    }
+  }, [user, initialMemberStatus]);
 
   // 즉겨찾기 상태 - 백엔드 API 사용
   useEffect(() => {
     if (!user) return;
     const fetchLikeStatus = async () => {
       try {
-        const res = await fetch(`/api/likes/club/${id}`, { credentials: 'include' });
+        const token = sessionStorage.getItem('accessToken');
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch(`/api/likes/club/${id}`, { headers });
         if (res.ok) {
           const data = await res.json();
           setIsLiked(data.liked || false);
@@ -285,8 +292,24 @@ export function CommunityDetailPage({
       setShowLoginRequiredModal(true);
       return;
     }
-    // TODO: 로그인 구현 후 /api/clubs/{id}/join 엔드포인트 사용
-    setShowLoginRequiredModal(true);
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch(`/api/clubs/${id}/join`, {
+        method: 'POST',
+        headers,
+      });
+      if (res.ok) {
+        setMemberStatus('pending');
+        toast.success('가입 신청이 완료되었습니다.');
+      } else {
+        const errorText = await res.text();
+        toast.error(errorText || '가입 신청에 실패했습니다.');
+      }
+    } catch {
+      toast.error('가입 신청 중 오류가 발생했습니다.');
+    }
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -455,9 +478,12 @@ export function CommunityDetailPage({
     }
     
     try {
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch(`/api/likes/club/${id}`, {
         method: 'POST',
-        credentials: 'include',
+        headers,
       });
       if (res.ok) {
         const data = await res.json();

@@ -27,14 +27,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
-  // 컴포넌트 마운트 시 로컬 스토리지에서 로그인 정보 확인
+  // 컴포넌트 마운트 시 sessionStorage에서 로그인 정보 확인
   useEffect(() => {
-    const storedToken = localStorage.getItem('accessToken');
-    const storedUser = localStorage.getItem('user');
-    const storedProfileImage = localStorage.getItem('profileImage');
+    const storedToken = sessionStorage.getItem('accessToken');
+    const storedUser = sessionStorage.getItem('user');
+    const storedProfileImage = sessionStorage.getItem('profileImage');
 
     if (storedToken && storedUser) {
-      // 토큰 유효성 간단 체크 - JWT 형식인지 확인
       const tokenParts = storedToken.split('.');
       if (tokenParts.length === 3) {
         setAccessToken(storedToken);
@@ -42,30 +41,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (storedProfileImage) {
           setProfileImage(storedProfileImage);
         }
-        console.log('저장된 로그인 정보 복원 성공');
       } else {
-        // 잘못된 토큰 형식 - 클리어
-        console.log('잘못된 토큰 형식 감지 - localStorage 클리어');
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('user');
-        localStorage.removeItem('profileImage');
+        sessionStorage.removeItem('accessToken');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('profileImage');
       }
     }
   }, []);
 
   const handleLogin = (userData: User, token: string) => {
-    console.log('[AppContext] handleLogin 호출됨:', { userData, token: token?.substring(0, 20) + '...' });
     setUser(userData);
     setAccessToken(token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('accessToken', token);
-    console.log('[AppContext] user 상태 설정 완료');
+    sessionStorage.setItem('user', JSON.stringify(userData));
+    sessionStorage.setItem('accessToken', token);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
-    localStorage.removeItem('profileImage');
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('profileImage');
     setUser(null);
     setAccessToken(null);
     setProfileImage(null);
@@ -74,9 +68,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const handleProfileImageUpdate = (newImage: string | null) => {
     setProfileImage(newImage);
     if (newImage) {
-      localStorage.setItem('profileImage', newImage);
+      sessionStorage.setItem('profileImage', newImage);
     } else {
-      localStorage.removeItem('profileImage');
+      sessionStorage.removeItem('profileImage');
     }
   };
 

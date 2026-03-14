@@ -6,7 +6,7 @@ import { LoginPageWrapper } from '@/pages/login/LoginPageWrapper';
 import { SignupPageWrapper } from '@/pages/signup/SignupPageWrapper';
 import { MyPageWrapper } from '@/pages/mypage/MyPageWrapper';
 import { MyMeetingsWrapper } from '@/pages/mypage/MyMeetingsWrapper';
-import { CommunityDetailPageWrapper } from '@/pages/communityDetail/CommunityDetailPageWrapper';
+import ClubDetailWrapper from '@/pages/communityDetail/ClubDetailWrapper';
 import { CreateCommunityPageWrapper } from '@/pages/communityCreate/CreateCommunityPageWrapper';
 import { CategoryPageWrapper } from '@/pages/category/CategoryPageWrapper';
 import { NoticePageWrapper } from '@/pages/notice/NoticePageWrapper';
@@ -53,7 +53,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'community/:id',
-        element: <CommunityDetailPageWrapper />,
+        element: <ClubDetailWrapper />,
       },
       {
         path: 'category/:category',

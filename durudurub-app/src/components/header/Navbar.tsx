@@ -1,6 +1,7 @@
 import { Menu, X, User, Bell, Gamepad2, Shield, Search, Sparkles, MapPin, Users } from 'lucide-react';
 import { DurupLogo } from '@/character/DurupLogo';
 import { useState, useEffect } from 'react';
+import { useApp } from '@/contexts/AppContext';
 
 // Navbar 컴포넌트가 받을 수 있는 함수 목록 정의
 interface NavbarProps {
@@ -38,48 +39,62 @@ function AISearchModal({
   isPremiumUser, 
   aiSearchCount,
   onPaymentClick,
-  communities,
-  onCommunityClick
+  onCommunityClick,
+  onUpdateSearchCount,
 }: { 
   onClose: () => void; 
   onSearch: (query: string) => void; 
   isPremiumUser: boolean;
   aiSearchCount: number;
   onPaymentClick?: () => void;
-  communities?: Array<{
-    id: string;
-    title: string;
-    description: string;
-    category: string;
-    location: string;
-    hostName: string;
-    memberCount: number;
-    maxMembers: number;
-    imageUrl?: string;
-  }>;
   onCommunityClick?: (communityId: string) => void;
+  onUpdateSearchCount?: (remaining: number) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
-  const remainingSearches = Math.max(0, 3 - aiSearchCount);
+  const [isLoading, setIsLoading] = useState(false);
+  const [aiMessage, setAiMessage] = useState('');
+  const [remaining, setRemaining] = useState(isPremiumUser ? -1 : Math.max(0, 3 - aiSearchCount));
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim() && communities) {
-      setHasSearched(true);
-      
-      // AI 검색 로직 (키워드 매칭)
-      const query = searchQuery.toLowerCase();
-      const results = communities.filter(community => 
-        community.title.toLowerCase().includes(query) ||
-        community.description.toLowerCase().includes(query) ||
-        community.category.toLowerCase().includes(query) ||
-        community.location.toLowerCase().includes(query)
-      );
-      
-      setSearchResults(results);
-      onSearch(searchQuery);
+    if (!searchQuery.trim()) return;
+    if (!isPremiumUser && remaining === 0) return;
+
+    setIsLoading(true);
+    setHasSearched(true);
+    setAiMessage('');
+    setSearchResults([]);
+
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch('/api/ai/search', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ message: searchQuery }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setSearchResults(data.clubs || []);
+        setAiMessage(data.aiMessage || '');
+        if (data.remaining != null) {
+          setRemaining(data.remaining);
+          onUpdateSearchCount?.(data.remaining);
+        }
+        onSearch(searchQuery);
+      } else {
+        const errText = await res.text();
+        setAiMessage(errText || 'AI 검색에 실패했습니다.');
+      }
+    } catch {
+      setAiMessage('AI 검색 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -111,7 +126,7 @@ function AISearchModal({
             {/* 검색 횟수 표시 */}
             {!isPremiumUser && (
               <span className="px-4 py-2 bg-gray-100 rounded-full text-sm font-medium text-gray-700">
-                {remainingSearches}/3 남음
+                {remaining}/3 남음
               </span>
             )}
             
@@ -142,25 +157,33 @@ function AISearchModal({
               {/* 검색 버튼 */}
               <button
                 type="submit"
-                disabled={!searchQuery.trim() || (!isPremiumUser && remainingSearches === 0)}
+                disabled={isLoading || !searchQuery.trim() || (!isPremiumUser && remaining === 0)}
                 className={`w-full px-8 py-4 rounded-xl font-bold text-white transition-all whitespace-nowrap shadow-lg ${
-                  !searchQuery.trim() || (!isPremiumUser && remainingSearches === 0)
+                  isLoading || !searchQuery.trim() || (!isPremiumUser && remaining === 0)
                     ? 'bg-gray-300 cursor-not-allowed'
                     : 'bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 hover:shadow-xl'
                 }`}
               >
-                AI로 검색하기
+                {isLoading ? 'AI가 검색 중...' : 'AI로 검색하기'}
               </button>
             </div>
           </form>
 
           {/* 검색 전 안내 텍스트 */}
-          {!hasSearched && (
+          {!hasSearched && !isLoading && (
             <p className="text-gray-600 text-center mt-4">원하는 모임을 검색하세요!</p>
           )}
 
+          {/* 로딩 표시 */}
+          {isLoading && (
+            <div className="flex items-center justify-center mt-6 gap-3">
+              <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-purple-500 border-t-transparent"></div>
+              <span className="text-purple-600 font-medium">AI가 모임을 찾고 있어요...</span>
+            </div>
+          )}
+
           {/* 검색 횟수 소진 안내 */}
-          {!isPremiumUser && remainingSearches === 0 && (
+          {!isPremiumUser && remaining === 0 && (
             <div className="mt-6 p-4 bg-purple-50 rounded-xl border border-purple-200">
               <p className="text-sm text-purple-800 text-center">
                 무료 검색 횟수를 모두 사용했습니다.{' '}
@@ -179,9 +202,21 @@ function AISearchModal({
         </div>
 
         {/* 검색 결과 영역 */}
-        {hasSearched && (
+        {/* AI 추천 메시지 */}
+        {aiMessage && !isLoading && (
+          <div className="px-8 pb-4">
+            <div className="p-4 bg-purple-50 rounded-xl border border-purple-100">
+              <div className="flex items-start gap-3">
+                <Sparkles className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-purple-800 whitespace-pre-line">{aiMessage}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {hasSearched && !isLoading && (
           <div className="flex-1 overflow-y-auto px-8 pb-8">
-            <div className="pt-6">
+            <div className="pt-2">
               <h3 className="text-lg font-bold text-gray-900 mb-4">
                 검색 결과 {searchResults.length}개
               </h3>
@@ -196,40 +231,45 @@ function AISearchModal({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {searchResults.map((community) => (
+                  {searchResults.map((club: any) => (
                     <div
-                      key={community.id}
-                      onClick={() => handleCommunityClick(community.id)}
+                      key={club.no}
+                      onClick={() => handleCommunityClick(String(club.no))}
                       className="bg-white border border-gray-200 rounded-xl p-4 hover:border-purple-300 hover:shadow-md transition-all cursor-pointer"
                     >
                       <div className="flex gap-4">
-                        {community.imageUrl && (
+                        {club.thumbnailImg && (
                           <img
-                            src={community.imageUrl}
-                            alt={community.title}
+                            src={club.thumbnailImg.startsWith('/') ? club.thumbnailImg : `/uploads/clubs/${club.thumbnailImg}`}
+                            alt={club.title}
                             className="w-24 h-24 rounded-lg object-cover flex-shrink-0"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                           />
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <h4 className="font-bold text-gray-900 text-lg truncate">
-                              {community.title}
+                              {club.title}
                             </h4>
-                            <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0">
-                              {community.category}
-                            </span>
+                            {club.category?.name && (
+                              <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0">
+                                {club.category.name}
+                              </span>
+                            )}
                           </div>
                           <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-                            {community.description}
+                            {club.description}
                           </p>
                           <div className="flex items-center gap-4 text-sm text-gray-500">
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              <span>{community.location}</span>
-                            </div>
+                            {club.location && (
+                              <div className="flex items-center gap-1">
+                                <MapPin className="w-4 h-4" />
+                                <span>{club.location}</span>
+                              </div>
+                            )}
                             <div className="flex items-center gap-1">
                               <Users className="w-4 h-4" />
-                              <span>{community.memberCount}/{community.maxMembers}명</span>
+                              <span>{club.currentMembers}/{club.maxMembers}명</span>
                             </div>
                           </div>
                         </div>
@@ -398,7 +438,12 @@ function LoginRequiredModal({ onClose, onLoginClick }: { onClose: () => void; on
   );
 }
 
-export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, onAdminClick, onPaymentClick, onExploreClick, onCommunityClick, communities, user, profileImage, onLogout }: NavbarProps) {
+export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, onAdminClick, onPaymentClick, onExploreClick, onCommunityClick, communities, user: userProp, profileImage: profileImageProp, onLogout: onLogoutProp }: NavbarProps) {
+  const { user: contextUser, profileImage: contextProfileImage, handleLogout } = useApp();
+  const user = contextUser || userProp;
+  const profileImage = contextProfileImage || profileImageProp;
+  const onLogout = onLogoutProp || handleLogout;
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -745,7 +790,7 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
       </div>
 
       {/* AI 검색 모달 */}
-      {showAISearchModal && <AISearchModal onClose={() => setShowAISearchModal(false)} onSearch={handleAISearch} isPremiumUser={isPremiumUser} aiSearchCount={aiSearchCount} onPaymentClick={onPaymentClick} communities={communities} onCommunityClick={onCommunityClick} />}
+      {showAISearchModal && <AISearchModal onClose={() => setShowAISearchModal(false)} onSearch={handleAISearch} isPremiumUser={isPremiumUser} aiSearchCount={aiSearchCount} onPaymentClick={onPaymentClick} onCommunityClick={onCommunityClick} onUpdateSearchCount={(r) => setAiSearchCount(3 - r)} />}
       {/* 구독 유도 모달 */}
       {showSubscriptionModal && <SubscriptionModal onClose={() => setShowSubscriptionModal(false)} onPaymentClick={onPaymentClick} />}
       {/* 로그인 유도 모달 */}

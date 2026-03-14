@@ -1,8 +1,8 @@
 import { Outlet, useNavigate, useLocation } from 'react-router';
 import { useState } from 'react';
-import { SearchModal } from '@/app/components/SearchModal';
-import { useApp } from '@/app/contexts/AppContext';
-import { mockCommunities } from '@/app/data/mockCommunities';
+import { SearchModal } from '@/components/modal/SearchModal';
+import { useApp } from '@/contexts/AppContext';
+import { mockCommunities } from '@/data/mockCommunities';
 
 export function MainLayout() {
   const navigate = useNavigate();

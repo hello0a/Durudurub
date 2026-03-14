@@ -5,7 +5,6 @@ import java.security.Principal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,7 +23,6 @@ import org.springframework.web.bind.annotation.GetMapping;
  * 좋아요 API 컨트롤러 (Ajax)
  */
 @Slf4j
-@CrossOrigin("*")
 @RestController
 @RequestMapping("/api/likes")
 public class LikeController {
@@ -50,6 +48,9 @@ public class LikeController {
                 return new ResponseEntity<>("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
             }
             User user = userService.selectByUserId(principal.getName());
+            if (user == null) {
+                return new ResponseEntity<>("사용자를 찾을 수 없습니다.", HttpStatus.UNAUTHORIZED);
+            }
             boolean liked = likeService.clubLike(clubNo, user.getNo());
             int count = likeService.countClubLikes(clubNo);
             return new ResponseEntity<>(new LikeResponse(liked, count), HttpStatus.OK);
@@ -73,7 +74,9 @@ public class LikeController {
 
             if (principal != null) {
                 User user = userService.selectByUserId(principal.getName());
-                liked = likeService.isClubLiked(clubNo, user.getNo());
+                if (user != null) {
+                    liked = likeService.isClubLiked(clubNo, user.getNo());
+                }
             }
             return new ResponseEntity<>(new LikeResponse(liked, count), HttpStatus.OK);
         } catch (Exception e) {
