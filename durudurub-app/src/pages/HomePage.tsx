@@ -9,7 +9,7 @@ import { BottomNavigation } from '@/components/footer/BottomNavigation';
 import { SearchModal } from '@/components/modal/SearchModal';
 import { useApp } from '@/contexts/AppContext';
 import { mockCommunities } from '@/data/mockCommunities';
-import styles from '@/app/App.module.css';
+import styles from '@/App.module.css';
 
 // 새로운 홈
 export function HomePage() {

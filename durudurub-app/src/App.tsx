@@ -6,6 +6,9 @@ import Home from "./pages/Home";
 import { LoginPage } from "./pages/login/LoginPage";
 import { SignupPage } from "./pages/signup/SignupPage";
 import { AppProvider, useApp } from "./contexts/AppContext";
+import { MyPage } from "./pages/mypage/MyPage";
+import { MyPageWrapper } from "./pages/mypage/MyPageWrapper";
+import { MyMeetingsWrapper } from "./pages/mypage/MyMeetingsWrapper";
 
 function AppRoutes() {
   const navigate = useNavigate();
@@ -32,6 +35,7 @@ function AppRoutes() {
       <Route path="/explore" element={<ExploreWrapper />} />
 
       <Route path="/club/:id" element={<ClubDetailWrapper />} />
+      <Route path="/community/:id" element={<ClubDetailWrapper />} />
 
       <Route
         path="/signup"
@@ -41,6 +45,16 @@ function AppRoutes() {
             onLoginClick={() => navigate("/login")}
           />
         }
+      />
+
+      <Route 
+        path="/mypage"
+        element={ <MyPageWrapper />}
+      />
+
+      <Route 
+        path="/meetings"
+        element={ <MyMeetingsWrapper />}
       />
     </Routes>
   );

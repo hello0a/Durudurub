@@ -111,12 +111,6 @@ INSERT INTO `user_auth` (`user_no`, `auth`) VALUES
 SELECT * FROM `user_auth`;
 
 -- 샘플 모임 데이터
-INSERT INTO `clubs` (`host_no`, `category_no`, `sub_category_no`, `title`, `description`, `max_members`, `location`, `lat`, `lng`, `club_date`, `status`) VALUES
-(3, 3, 9, '맛집 탐방단', '숨은 맛집을 찾아 떠나요', 8, '서울 전역', '37.53450000', '37.53450000', DATE_ADD(NOW(), INTERVAL 5 DAY), 'RECRUITING'),
-(4, 4, 13, '보드게임 모임', '다양한 보드게임을 즐겨요', 6, '홍대 보드게임카페', '37.55630000', '126.92370000', DATE_ADD(NOW(), INTERVAL 2 DAY), 'RECRUITING');
-INSERT INTO `clubs` (`host_no`, `category_no`, `sub_category_no`, `title`, `description`, `thumbnail_img`, `max_members`, `location`, `lat`, `lng`, `club_date`, `status`) VALUES
-(2, 8, 8, '더그 러브 모임', '더그를 찾아서','/uploads/clubs/find-dug.jpg', 20, '고잉메리홈', '37.55630000', '126.92370000', DATE_ADD(NOW(), INTERVAL 2 DAY), 'RECRUITING');
-
 -- 1. 자기 계발
 -- -1. 독서
 INSERT INTO `clubs` (`host_no`, `category_no`, `sub_category_no`, `title`, `description`,  `thumbnail_img`, `max_members`, `location`, `lat`, `lng`, `club_date`, `status`) VALUES
@@ -168,7 +162,7 @@ INSERT INTO `clubs` (`host_no`, `category_no`, `sub_category_no`, `title`, `desc
 -- 3. 푸드
 -- -1. 맛집
 INSERT INTO `clubs` (`host_no`, `category_no`, `sub_category_no`, `title`, `description`, `thumbnail_img`, `max_members`, `location`, `lat`, `lng`, `club_date`, `status`) VALUES
-(5, 3, 1, '오늘도 날라간다. 피리부는 호빵맨', '1달에 한번씩 전국으로 빵집 투어할 사람 모집합니다', '/uploads/clubs/food/best1.jpg', 4, '대전 성심당', '36.329079', '127.427190', DATE_ADD(NOW(), INTERVAL 3 DAY), 'RECRUITING'),
+(5, 3, 1, '오늘도 날라간다. 피리부는 호빵맨', '1달에 한번씩 전국으로 빵집 투어할 사람 모집합니다', '/uploads/clubs/food/best1.jpeg', 4, '대전 성심당', '36.329079', '127.427190', DATE_ADD(NOW(), INTERVAL 3 DAY), 'RECRUITING'),
 (6, 3, 1, '우리 동네 맛집 마스터하기', '인천 부평동 사는 사람들, 같이 맛집 찾아내여~~', '/uploads/clubs/food/best2.jfif', 4, '부평역', '37.490552', '126.723651', DATE_ADD(NOW(), INTERVAL 7 DAY), 'RECRUITING'),
 (7, 3, 1, '먹고 싶지만, 돈이 없어요', '그지 깽깽들끼리 모여서 맛집 n/1 할 사람!', '/uploads/clubs/food/best3.jfif', 3, '서울 종로구', '37.596338', '126.977808', DATE_ADD(NOW(), INTERVAL 3 DAY), 'RECRUITING');
 -- -2. 한식

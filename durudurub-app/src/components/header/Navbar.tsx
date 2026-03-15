@@ -504,6 +504,7 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
       } else if (action === 'mypage') {
         onMyPageClick?.();
       } else if (action === 'myMeetings') {
+        console.log("=====================");
         onMyMeetingsClick?.();
       } else if (action === 'admin') {
         onAdminClick?.();

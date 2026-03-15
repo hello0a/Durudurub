@@ -1,5 +1,5 @@
 import { ArrowLeft, Users, Crown, Clock, Trash2, UserCheck, UserX, ChevronDown, ChevronUp, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navbar } from '@/components/header/Navbar';
 import { BottomNavigation } from '@/components/footer/BottomNavigation';
 import { toast, Toaster } from 'sonner';
@@ -16,22 +16,22 @@ interface MyGroupsManagementProps {
   onMiniGameClick?: () => void;
   onMyMeetingsClick?: () => void;
   onLogout?: () => void;
-  onCommunityClick?: (communityId: string) => void;
+  onCommunityClick?: (communityId: number) => void;
 }
 
 interface Member {
   id: string;
   userId: string;
-  nickname: string;
+  username: string;
   joinedAt: string;
   status: 'pending' | 'approved';
 }
 
 interface Group {
-  id: string;
-  name: string;
+  no: number;
+  title: string;
   category: string;
-  memberCount: number;
+  currentMembers: number;
   maxMembers: number;
   imageUrl?: string;
   role: 'leader' | 'member';
@@ -42,179 +42,201 @@ interface Group {
 interface ConfirmModal {
   isOpen: boolean;
   type: 'approve' | 'reject' | 'remove' | 'deleteGroup' | 'cancelRequest' | null;
-  groupId: string | null;
+  groupNo: number | null;
   memberId: string | null;
   memberName: string | null;
 }
 
 export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, onLoginClick, onLogoClick, onNoticeClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, onLogout, onCommunityClick }: MyGroupsManagementProps) {
   const [activeTab, setActiveTab] = useState<'joined' | 'leader' | 'pending'>('joined');
-  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const [expandedGroup, setExpandedGroup] = useState<number | null>(null);
   const [confirmModal, setConfirmModal] = useState<ConfirmModal>({
     isOpen: false,
     type: null,
-    groupId: null,
+    groupNo: null,
     memberId: null,
     memberName: null,
   });
+  const [loading, setLoading] = useState(false);
 
-  // 상태로 관리되는 데이터
-  const [joinedGroups, setJoinedGroups] = useState<Group[]>([
-    {
-      id: '1',
-      name: '주말 등산 모임',
-      category: '동',
-      memberCount: 12,
-      maxMembers: 20,
-      role: 'member',
-      status: 'approved',
-    },
-    {
-      id: '2',
-      name: '독서 토론 클럽',
-      category: '문화',
-      memberCount: 8,
-      maxMembers: 15,
-      role: 'member',
-      status: 'approved',
-    },
-  ]);
+  const [joinedGroups, setJoinedGroups] = useState<Group[]>([]);
 
-  const [leaderGroups, setLeaderGroups] = useState<Group[]>([
-    {
-      id: '3',
-      name: '사진 촬영 동호회',
-      category: '취미',
-      memberCount: 15,
-      maxMembers: 25,
-      role: 'leader',
-      status: 'approved',
-      members: [
-        {
-          id: 'm1',
-          userId: 'user001',
-          nickname: '김철수',
-          joinedAt: '2025-01-15',
-          status: 'approved',
-        },
-        {
-          id: 'm2',
-          userId: 'user002',
-          nickname: '이영희',
-          joinedAt: '2025-01-20',
-          status: 'approved',
-        },
-        {
-          id: 'm3',
-          userId: 'user003',
-          nickname: '박민수',
-          joinedAt: '2025-01-27',
-          status: 'pending',
-        },
-        {
-          id: 'm4',
-          userId: 'user004',
-          nickname: '최지혜',
-          joinedAt: '2025-01-27',
-          status: 'pending',
-        },
-      ],
-    },
-  ]);
+  const [leaderGroups, setLeaderGroups] = useState<Group[]>([]);
 
-  const [pendingGroups, setPendingGroups] = useState<Group[]>([
-    {
-      id: '4',
-      name: '요리 레시피 공유',
-      category: '요리',
-      memberCount: 10,
-      maxMembers: 20,
-      role: 'member',
-      status: 'pending',
-    },
-  ]);
+  const [pendingGroups, setPendingGroups] = useState<Group[]>([]);
 
-  const handleLeaveGroup = (groupId: string, groupName: string) => {
+  const handleLeaveGroup = (groupNo: number, groupName: string) => {
     setConfirmModal({
       isOpen: true,
       type: 'remove',
-      groupId: groupId,
+      groupNo: groupNo,
       memberId: null,
       memberName: groupName,
     });
   };
 
-  const handleApproveMember = (groupId: string, memberId: string, memberName: string) => {
+  const handleApproveMember = (groupNo: number, memberId: string, memberName: string) => {
     setConfirmModal({
       isOpen: true,
       type: 'approve',
-      groupId: groupId,
+      groupNo: groupNo,
       memberId: memberId,
       memberName: memberName,
     });
   };
 
-  const handleRejectMember = (groupId: string, memberId: string, memberName: string) => {
+  const handleRejectMember = (groupNo: number, memberId: string, memberName: string) => {
     setConfirmModal({
       isOpen: true,
       type: 'reject',
-      groupId: groupId,
+      groupNo: groupNo,
       memberId: memberId,
       memberName: memberName,
     });
   };
 
-  const handleRemoveMember = (groupId: string, memberId: string, memberName: string) => {
+  const handleRemoveMember = (groupNo: number, memberId: string, memberName: string) => {
     setConfirmModal({
       isOpen: true,
       type: 'remove',
-      groupId: groupId,
+      groupNo: groupNo,
       memberId: memberId,
       memberName: memberName,
     });
   };
 
-  const handleDeleteGroup = (groupId: string, groupName: string) => {
+  const handleDeleteGroup = (groupNo: number, groupName: string) => {
     setConfirmModal({
       isOpen: true,
       type: 'deleteGroup',
-      groupId: groupId,
+      groupNo: groupNo,
       memberId: null,
       memberName: groupName,
     });
   };
 
-  const handleCancelRequest = (groupId: string, groupName: string) => {
+  const handleCancelRequest = (groupNo: number, groupName: string) => {
     setConfirmModal({
       isOpen: true,
       type: 'cancelRequest',
-      groupId: groupId,
+      groupNo: groupNo,
       memberId: null,
       memberName: groupName,
     });
   };
 
-  const toggleGroupExpansion = (groupId: string) => {
-    setExpandedGroup(expandedGroup === groupId ? null : groupId);
+  const toggleGroupExpansion = (groupNo: number) => {
+    setExpandedGroup(expandedGroup === groupNo ? null : groupNo);
   };
 
+  useEffect(() => {
+    loadJoinedGroups()
+  },[]);
+
+  const loadJoinedGroups = async () => {
+    setLoading(true);
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch('/api/users/mypage/club/fragment/approvedClub', { headers });
+      const data = await res.json();
+      console.log("data .....", data);
+      setJoinedGroups(data || [])
+    } catch (error) {
+      console.error('내모임(가입) 조회 실패 : ', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadLeaderGroups();
+  }, []);
+
+  const loadLeaderGroups = async () => {
+    setLoading(true);
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch('/api/users/mypage/club/fragment/hostClub', { headers });
+      const data = await res.json();
+      console.log("data .....", data);
+      setLeaderGroups(data || [])
+    } catch (error) {
+      console.error('내모임(리더) 조회 실패 : ', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadPendingGroups();
+  }, []);
+
+  const loadPendingGroups = async () => {
+    setLoading(true);
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch('/api/users/mypage/club/fragment/pendingClub', { headers });
+      const data = await res.json();
+      console.log("data .....", data);
+      setPendingGroups(data || [])
+    } catch (error) {
+      console.error('내모임(승인) 조회 실패 : ', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const cancelPending = async (clubNo: number) => {
+    setLoading(true);
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const res = await fetch(`/api/users/mypage/club/pendingClub/${clubNo}`, { 
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      console.log(`/api/users/mypage/club/pendingClub/${clubNo}`)
+      console.log(">>>>>", res)
+
+      if(!res.ok) throw new Error("신청 취소 실패");
+
+      // ⭐ state에서 제거
+      setPendingGroups(prev =>
+        prev.filter(group => group.no !== clubNo)
+      );
+
+      console.log("setPendingGroups >>>", setPendingGroups)
+    } catch (error) {
+      console.error('내모임(승인) 삭제 실패 : ', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const renderGroupCard = (group: Group, showLeaveButton: boolean, showManagement: boolean) => {
-    const isExpanded = expandedGroup === group.id;
+    const isExpanded = expandedGroup === group.no;
     const pendingMembers = group.members?.filter(m => m.status === 'pending') || [];
     const approvedMembers = group.members?.filter(m => m.status === 'approved') || [];
 
     const handleCardClick = () => {
-      console.log('카드 클릭됨:', group.id, group.name);
+      console.log('카드 클릭됨:', group.no, group.title);
       if (onCommunityClick) {
         console.log('onCommunityClick 호출');
-        onCommunityClick(group.id);
+        onCommunityClick(group.no);
       } else {
         console.log('onCommunityClick이 정의되지 않음');
       }
     };
 
     return (
-      <div key={group.id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+      <div key={group.no} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
         <div 
           className="flex items-start justify-between cursor-pointer hover:bg-gray-50 -m-6 p-6 rounded-xl transition-colors"
           onClick={handleCardClick}
@@ -225,21 +247,21 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-lg font-bold text-gray-900">{group.name}</h3>
+                <h3 className="text-lg font-bold text-gray-900">{group.title}</h3>
                 {group.role === 'leader' && (
                   <Crown className="w-5 h-5 text-yellow-500" />
                 )}
               </div>
               <p className="text-sm text-gray-600 mb-2">{group.category}</p>
               <p className="text-sm text-gray-500">
-                멤버 {group.memberCount}/{group.maxMembers}명
+                멤버 {group.currentMembers}/{group.maxMembers}명
               </p>
             </div>
           </div>
           <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
             {showLeaveButton && (
               <button
-                onClick={() => handleLeaveGroup(group.id, group.name)}
+                onClick={() => handleLeaveGroup(group.no, group.title)}
                 className="flex items-center gap-1 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
@@ -249,14 +271,14 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
             {showManagement && (
               <>
                 <button
-                  onClick={() => toggleGroupExpansion(group.id)}
+                  onClick={() => toggleGroupExpansion(group.no)}
                   className="flex items-center gap-1 px-4 py-2 text-sm text-[#00A651] hover:bg-[#00A651]/10 rounded-lg transition-colors"
                 >
                   멤버 관리
                   {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 <button
-                  onClick={() => handleDeleteGroup(group.id, group.name)}
+                  onClick={() => handleDeleteGroup(group.no, group.title)}
                   className="flex items-center gap-1 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -284,19 +306,19 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                       className="flex items-center justify-between bg-orange-50 rounded-lg p-3"
                     >
                       <div>
-                        <p className="font-medium text-gray-900">{member.nickname}</p>
+                        <p className="font-medium text-gray-900">{member.username}</p>
                         <p className="text-xs text-gray-500">신청일: {member.joinedAt}</p>
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handleApproveMember(group.id, member.id, member.nickname)}
+                          onClick={() => handleApproveMember(group.no, member.id, member.username)}
                           className="flex items-center gap-1 px-3 py-1.5 bg-[#00A651] text-white text-sm rounded-lg hover:bg-[#008f46] transition-colors"
                         >
                           <UserCheck className="w-4 h-4" />
                           승인
                         </button>
                         <button
-                          onClick={() => handleRejectMember(group.id, member.id, member.nickname)}
+                          onClick={() => handleRejectMember(group.no, member.id, member.username)}
                           className="flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
                         >
                           <UserX className="w-4 h-4" />
@@ -321,11 +343,11 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                     className="flex items-center justify-between bg-gray-50 rounded-lg p-3"
                   >
                     <div>
-                      <p className="font-medium text-gray-900">{member.nickname}</p>
+                      <p className="font-medium text-gray-900">{member.username}</p>
                       <p className="text-xs text-gray-500">가입일: {member.joinedAt}</p>
                     </div>
                     <button
-                      onClick={() => handleRemoveMember(group.id, member.id, member.nickname)}
+                      onClick={() => handleRemoveMember(group.no, member.id, member.username)}
                       className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     >
                       추방하기
@@ -462,7 +484,7 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
             <>
               {pendingGroups.length > 0 ? (
                 pendingGroups.map((group) => (
-                  <div key={group.id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div key={group.no} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-4">
                         <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center">
@@ -470,19 +492,19 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-bold text-gray-900">{group.name}</h3>
+                            <h3 className="text-lg font-bold text-gray-900">{group.title}</h3>
                             <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded">
                               승인 대기 중
                             </span>
                           </div>
                           <p className="text-sm text-gray-600 mb-2">{group.category}</p>
                           <p className="text-sm text-gray-500">
-                            멤버 {group.memberCount}/{group.maxMembers}명
+                            멤버 {group.currentMembers}/{group.maxMembers}명
                           </p>
                         </div>
                       </div>
                       <button
-                        onClick={() => handleCancelRequest(group.id, group.name)}
+                        onClick={() => handleCancelRequest(group.no, group.title)}
                         className="flex items-center gap-1 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
                         <X className="w-4 h-4" />
@@ -515,7 +537,7 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                 {confirmModal.type === 'cancelRequest' && '가입 신청 취소'}
               </h3>
               <button
-                onClick={() => setConfirmModal({ isOpen: false, type: null, groupId: null, memberId: null, memberName: null })}
+                onClick={() => setConfirmModal({ isOpen: false, type: null, groupNo: null, memberId: null, memberName: null })}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <X className="w-6 h-6" />
@@ -596,7 +618,7 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
             
             <div className="flex gap-3">
               <button
-                onClick={() => setConfirmModal({ isOpen: false, type: null, groupId: null, memberId: null, memberName: null })}
+                onClick={() => setConfirmModal({ isOpen: false, type: null, groupNo: null, memberId: null, memberName: null })}
                 className="flex-1 px-4 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
               >
                 취소
@@ -607,7 +629,7 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                     // 멤버 승인
                     setLeaderGroups(prevGroups =>
                       prevGroups.map(group => {
-                        if (group.id === confirmModal.groupId) {
+                        if (group.no === confirmModal.groupNo) {
                           return {
                             ...group,
                             members: group.members?.map(member => 
@@ -625,7 +647,7 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                     // 멤버 거부 - 리스트에서 제거
                     setLeaderGroups(prevGroups =>
                       prevGroups.map(group => {
-                        if (group.id === confirmModal.groupId) {
+                        if (group.no === confirmModal.groupNo) {
                           return {
                             ...group,
                             members: group.members?.filter(member => member.id !== confirmModal.memberId)
@@ -639,18 +661,18 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                     if (confirmModal.memberId === null) {
                       // 모임 탈퇴 - 리스트에서 해당 모임 제거
                       setJoinedGroups(prevGroups => 
-                        prevGroups.filter(group => group.id !== confirmModal.groupId)
+                        prevGroups.filter(group => group.no !== confirmModal.groupNo)
                       );
                       toast.success('모임에서 탈퇴했습니다.');
                     } else {
                       // 멤버 내보내기 - 해당 멤버 제거
                       setLeaderGroups(prevGroups =>
                         prevGroups.map(group => {
-                          if (group.id === confirmModal.groupId) {
+                          if (group.no === confirmModal.groupNo) {
                             return {
                               ...group,
                               members: group.members?.filter(member => member.id !== confirmModal.memberId),
-                              memberCount: group.memberCount - 1
+                              memberCount: group.currentMembers - 1
                             };
                           }
                           return group;
@@ -661,17 +683,20 @@ export function MyGroupsManagement({ onBack, user, profileImage, onSignupClick, 
                   } else if (confirmModal.type === 'deleteGroup') {
                     // 모임 삭제 - 리스트에서 해당 모임 제거
                     setLeaderGroups(prevGroups => 
-                      prevGroups.filter(group => group.id !== confirmModal.groupId)
+                      prevGroups.filter(group => group.no !== confirmModal.groupNo)
                     );
                     toast.success('모임이 삭제되었습니다.');
                   } else if (confirmModal.type === 'cancelRequest') {
                     // 가입 신청 취소 - 리스트에서 해당 모임 제거
                     setPendingGroups(prevGroups => 
-                      prevGroups.filter(group => group.id !== confirmModal.groupId)
+                      prevGroups.filter(group => group.no !== confirmModal.groupNo)
                     );
+                    if (confirmModal.groupNo) {
+                      cancelPending(confirmModal.groupNo);
+                    }
                     toast.success('가입 신청이 취소되었습니다.');
                   }
-                  setConfirmModal({ isOpen: false, type: null, groupId: null, memberId: null, memberName: null });
+                  setConfirmModal({ isOpen: false, type: null, groupNo: null, memberId: null, memberName: null });
                 }}
                 className={`flex-1 px-4 py-3 text-white rounded-lg font-medium transition-colors ${
                   confirmModal.type === 'approve'
