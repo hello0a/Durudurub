@@ -404,7 +404,7 @@ function LoginRequiredModal({ onClose, onLoginClick }: { onClose: () => void; on
             <ul className="space-y-2 text-sm text-purple-800">
               <li className="flex items-start">
                 <span className="text-purple-500 mr-2">✓</span>
-                <span>AI로 원하는 모임 찾기</span>
+                <span>자연어로 원하는 모임 찾기</span>
               </li>
               <li className="flex items-start">
                 <span className="text-purple-500 mr-2">✓</span>
@@ -551,7 +551,7 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
   }, [isUserMenuOpen]);
 
   return (
-    <nav className="bg-white border-b border-gray-100 fixed top-0 left-0 right-0 z-50">
+    <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-25">
           {/* 로고 */}
@@ -589,7 +589,7 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
           <div className="hidden md:flex items-center space-x-6">
             {/* 미니 게임 버튼 (모든 사용자에게 표시) */}
             <button
-              className="text-lg border-2 border-[#7C3AED] text-[#7C3AED] px-6 py-2.5 rounded-full hover:bg-[#7C3AED] hover:text-white transition-colors font-medium flex items-center gap-2"
+              className="text-lg border-2 border-[#00A651] text-[#00A651] px-6 py-2.5 rounded-full hover:bg-[#00A651] hover:text-white transition-colors font-medium flex items-center gap-2"
               onClick={onMiniGameClick}
             >
               <Gamepad2 className="w-5 h-5" />

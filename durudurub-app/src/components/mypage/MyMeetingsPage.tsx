@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, MapPin, Calendar, Users, Heart, Clock } from 'lucide-react';
-import { projectId, publicAnonKey } from 'utils/supabase/info';
+import { projectId, publicAnonKey } from '/utils/supabase/info';
 
 interface MyMeetingsPageProps {
   onBack: () => void;

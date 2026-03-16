@@ -1,10 +1,11 @@
 import { ArrowLeft, User, Mail, Calendar, MapPin, Edit2, Heart, Users, AlertTriangle, Crown, Sparkles } from 'lucide-react';
 import { useState } from 'react';
-import { Navbar } from '@/app/components/Navbar';
+import { Navbar } from '@/components/header/Navbar';
 
 interface MyPageProps {
   onBack: () => void;
   user: any;
+  premiumEndDate?: string | null;
   profileImage?: string | null;
   onProfileImageUpdate?: (newImage: string | null) => void;
   onNavigateToGroupsManagement?: () => void;
@@ -22,6 +23,7 @@ interface MyPageProps {
 export function MyPage({ 
   onBack, 
   user, 
+  premiumEndDate,
   profileImage: initialProfileImage, 
   onProfileImageUpdate, 
   onNavigateToGroupsManagement,
@@ -104,6 +106,23 @@ export function MyPage({
     }
   };
 
+  const resolvedPremiumEndDate = premiumEndDate || user?.premiumEndDate || null;
+
+  const formattedNextPaymentDate = resolvedPremiumEndDate
+    ? new Date(resolvedPremiumEndDate).toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : '갱신일 정보 없음';
+
+  const isPremiumUser = Boolean(user?.isPremium);
+  const accentTextClass = isPremiumUser ? 'text-[#7C3AED] hover:text-[#6D28D9]' : 'text-[#00A651] hover:text-[#008f46]';
+  const accentBgClass = isPremiumUser ? 'bg-[#7C3AED] hover:bg-[#6D28D9]' : 'bg-[#00A651] hover:bg-[#008f46]';
+  const accentFocusRingClass = isPremiumUser ? 'focus:ring-[#7C3AED]' : 'focus:ring-[#00A651]';
+  const accentStatClass = isPremiumUser ? 'text-[#7C3AED]' : 'text-[#00A651]';
+  const profileGradientClass = isPremiumUser ? 'from-[#7C3AED] to-[#6D28D9]' : 'from-[#00A651] to-[#008f46]';
+
   return (
     <div className="min-h-screen bg-[#FAF9F6]">
       {/* 네비게이션 바 */}
@@ -124,7 +143,7 @@ export function MyPage({
       <div className="md:hidden sticky top-16 bg-white border-b border-gray-200 px-4 py-3 z-10">
         <button
           onClick={onBack}
-          className="flex items-center justify-center text-gray-700 hover:text-[#00A651] transition-colors"
+          className={`flex items-center justify-center text-gray-700 transition-colors ${accentTextClass}`}
           aria-label="뒤로가기"
         >
           <ArrowLeft className="w-7 h-7" />
@@ -136,7 +155,11 @@ export function MyPage({
           {/* 왼쪽: 프로필 정보 */}
           <div className="lg:col-span-2 space-y-6">
             {/* 멤버십 정보 카드 */}
-            <div className="bg-gradient-to-br from-[#00A651] to-[#00C766] rounded-2xl shadow-sm p-6 text-white overflow-hidden relative">
+            <div
+              className={`rounded-2xl shadow-sm p-6 text-white overflow-hidden relative bg-gradient-to-br ${
+                user?.isPremium ? 'from-[#7C3AED] to-[#A855F7]' : 'from-[#00A651] to-[#008f46]'
+              }`}
+            >
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
               
@@ -146,7 +169,7 @@ export function MyPage({
                   {user?.isPremium ? (
                     <Crown className="w-6 h-6 text-yellow-300" />
                   ) : (
-                    <Sparkles className="w-6 h-6 text-white/70" />
+                    <Sparkles className="w-6 h-6 text-[#DCFCE7]" />
                   )}
                 </div>
 
@@ -176,7 +199,7 @@ export function MyPage({
                     </div>
                     <div className="mt-4 pt-4 border-t border-white/20">
                       <p className="text-xs text-white/70">다음 결제일</p>
-                      <p className="text-sm font-semibold">2026년 2월 28일</p>
+                      <p className="text-sm font-semibold">{formattedNextPaymentDate}</p>
                     </div>
                   </div>
                 ) : (
@@ -214,7 +237,7 @@ export function MyPage({
                 {!isEditing ? (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="flex items-center text-[#00A651] hover:text-[#008f46] transition-colors"
+                    className={`flex items-center transition-colors ${accentTextClass}`}
                   >
                     <Edit2 className="w-4 h-4 mr-1" />
                     수정
@@ -229,7 +252,7 @@ export function MyPage({
                     </button>
                     <button
                       onClick={handleSave}
-                      className="px-4 py-2 bg-[#00A651] text-white rounded-lg hover:bg-[#008f46] transition-colors"
+                      className={`px-4 py-2 text-white rounded-lg transition-colors ${accentBgClass}`}
                     >
                       저장
                     </button>
@@ -246,12 +269,12 @@ export function MyPage({
                       style={{ backgroundImage: `url(${profileImage})` }}
                     ></div>
                   ) : (
-                    <div className="w-20 h-20 bg-gradient-to-br from-[#00A651] to-[#008f46] rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                    <div className={`w-20 h-20 bg-gradient-to-br rounded-full flex items-center justify-center text-white text-2xl font-bold ${profileGradientClass}`}>
                       {editedUser.nickname.charAt(0)}
                     </div>
                   )}
                   {isEditing && (
-                    <label className="ml-4 text-sm text-[#00A651] hover:text-[#008f46] cursor-pointer">
+                    <label className={`ml-4 text-sm cursor-pointer ${accentTextClass}`}>
                       사진 변경
                       <input
                         type="file"
@@ -274,7 +297,7 @@ export function MyPage({
                       type="text"
                       value={editedUser.nickname}
                       onChange={(e) => setEditedUser({ ...editedUser, nickname: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A651]"
+                      className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ${accentFocusRingClass}`}
                     />
                   ) : (
                     <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
@@ -306,7 +329,7 @@ export function MyPage({
                       value={editedUser.location}
                       onChange={(e) => setEditedUser({ ...editedUser, location: e.target.value })}
                       placeholder="예: 서울특별시"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A651]"
+                      className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ${accentFocusRingClass}`}
                     />
                   ) : (
                     <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
@@ -332,7 +355,7 @@ export function MyPage({
                           placeholder="예: 25"
                           min="1"
                           max="150"
-                          className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A651]"
+                          className={`w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ${accentFocusRingClass}`}
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
                           세
@@ -355,7 +378,7 @@ export function MyPage({
                       <select
                         value={editedUser.gender}
                         onChange={(e) => setEditedUser({ ...editedUser, gender: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A651] bg-white"
+                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 bg-white ${accentFocusRingClass}`}
                       >
                         <option value="">선택하세요</option>
                         <option value="남성">남성</option>
@@ -391,18 +414,18 @@ export function MyPage({
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">참여 중인 모임</p>
-                      <p className="text-2xl font-bold text-[#00A651] mt-1">3개</p>
+                      <p className={`text-2xl font-bold mt-1 ${accentStatClass}`}>3개</p>
                     </div>
-                    <Users className="w-8 h-8 text-[#00A651] opacity-20" />
+                    <Users className={`w-8 h-8 opacity-20 ${accentStatClass}`} />
                   </div>
                 </div>
                 <div className="bg-[#FAF9F6] rounded-xl p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">즐겨찾기</p>
-                      <p className="text-2xl font-bold text-[#00A651] mt-1">5개</p>
+                      <p className={`text-2xl font-bold mt-1 ${accentStatClass}`}>5개</p>
                     </div>
-                    <Heart className="w-8 h-8 text-[#00A651] opacity-20" />
+                    <Heart className={`w-8 h-8 opacity-20 ${accentStatClass}`} />
                   </div>
                 </div>
               </div>
@@ -416,13 +439,13 @@ export function MyPage({
               <div className="space-y-2">
                 <button
                   onClick={onNavigateToGroupsManagement}
-                  className="w-full text-left px-4 py-3 rounded-lg hover:bg-[#FAF9F6] transition-colors text-gray-700 hover:text-[#00A651]"
+                  className={`w-full text-left px-4 py-3 rounded-lg hover:bg-[#FAF9F6] transition-colors text-gray-700 ${accentTextClass}`}
                 >
                   내 모임 관리
                 </button>
                 <button
                   onClick={onNavigateToFavorites}
-                  className="w-full text-left px-4 py-3 rounded-lg hover:bg-[#FAF9F6] transition-colors text-gray-700 hover:text-[#00A651]"
+                  className={`w-full text-left px-4 py-3 rounded-lg hover:bg-[#FAF9F6] transition-colors text-gray-700 ${accentTextClass}`}
                 >
                   즐겨찾기 목록
                 </button>

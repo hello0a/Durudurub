@@ -1,10 +1,11 @@
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
 import { ForgotPasswordPage } from '@/pages/other/ForgotPasswordPage';
 import { MiniGamePage } from '@/pages/other/MiniGamePage';
 import { FavoritesPage } from '@/pages/favorites/FavoritesPage';
 import { AdminPage } from '@/pages/admin/AdminPage';
 import { PaymentPage } from '@/pages/other/PaymentPage';
+import { PaymentFailPage, PaymentSuccessPage } from '@/pages/other/PaymentResultPage';
 
 export function ForgotPasswordPageWrapper() {
   const navigate = useNavigate();
@@ -59,13 +60,7 @@ export function FavoritesPageWrapper() {
       onMyMeetingsClick={() => navigate('/meetings')}
       onLogout={handleLogout}
       onCommunityClick={(communityId) => navigate(`/community/${communityId}`)}
-      onExploreClick={(searchQuery) => {
-        if (searchQuery) {
-          navigate(`/explore?q=${encodeURIComponent(searchQuery)}`);
-        } else {
-          navigate('/explore');
-        }
-      }}
+      onExploreClick={() => navigate('/explore')}
     />
   );
 }
@@ -95,6 +90,7 @@ export function AdminPageWrapper() {
 
 export function PaymentPageWrapper() {
   const navigate = useNavigate();
+  const { user, accessToken } = useApp();
 
   return (
     <PaymentPage
@@ -104,6 +100,20 @@ export function PaymentPageWrapper() {
         navigate('/');
       }}
       onBack={() => navigate('/')}
+      user={user}
+      accessToken={accessToken}
     />
   );
+}
+
+export function PaymentSuccessPageWrapper() {
+	const navigate = useNavigate();
+
+	return <PaymentSuccessPage onGoHome={() => navigate('/')} onGoMyPage={() => navigate('/mypage')} />;
+}
+
+export function PaymentFailPageWrapper() {
+	const navigate = useNavigate();
+
+	return <PaymentFailPage onRetry={() => navigate('/payment')} onGoHome={() => navigate('/')} />;
 }

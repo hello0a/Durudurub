@@ -1,5 +1,7 @@
 package com.aloha.durudurub.service;
 
+import java.util.Map;
+
 import com.aloha.durudurub.dto.Payment;
 
 /**
@@ -12,4 +14,6 @@ public interface PaymentService {
     Payment selectByOrderId(String orderId);
 
     void markApproved(String orderId, String paymentKey);
+
+    Map<String, Object> confirmTossPayment(String paymentKey, String orderId, int amount);
 }

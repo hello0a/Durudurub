@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Check, X, Sparkles } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
+import { loadTossPayments } from '@tosspayments/tosspayments-sdk';
+
+import api from '@/api/axios';
 
 interface PaymentPageProps {
   onClose?: () => void;
@@ -23,6 +26,8 @@ export function PaymentPage({
   onClose, 
   onPaymentSuccess,
   onBack,
+  user,
+  accessToken,
 }: PaymentPageProps) {
   const [selectedPlan, setSelectedPlan] = useState<'1month' | '3months' | '6months'>('1month');
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -31,14 +36,19 @@ export function PaymentPage({
 
   // 구독 플랜 정보
   const plans = {
-    '1month': { duration: '1개월', price: 4900, discount: 0 },
-    '3months': { duration: '3개월', price: 13200, discount: 10, originalPrice: 14700 },
-    '6months': { duration: '6개월', price: 23520, discount: 20, originalPrice: 29400 },
+    '1month': { duration: '1개월', period: 1, price: 4900, discount: 0 },
+    '3months': { duration: '3개월', period: 3, price: 13200, discount: 10, originalPrice: 14700 },
+    '6months': { duration: '6개월', period: 6, price: 23520, discount: 20, originalPrice: 29400 },
   };
 
   const selectedPlanInfo = plans[selectedPlan];
 
   const handlePayment = async () => {
+    if (!user || !accessToken) {
+      toast.error('결제를 진행하려면 먼저 로그인해주세요.');
+      return;
+    }
+
     // 약관 동의 확인
     if (!agreeTerms || !agreePrivacy) {
       toast.error('약관 동의를 확인해주세요.');
@@ -49,28 +59,49 @@ export function PaymentPage({
 
     // 결제 처리 시뮬레이션 (실제로는 결제 API 호출)
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // 결제 성공
-      console.log('결제 성공:', {
-        price: selectedPlanInfo.price,
-        plan: 'premium',
-        timestamp: new Date().toISOString(),
+      const orderResponse = await api.post('/payments/order', {
+        period: selectedPlanInfo.period,
       });
 
-      // 사용자 구독 상태 업데이트 (실제로는 서버 API 호출)
-      // TODO: Supabase에 구독 정보 저장
-      
-      toast.success('결제가 완료되었습니다! 프리미엄 회원이 되신 것을 환영합니다.');
-      
-      // 결제 성공 콜백 실행
-      onPaymentSuccess?.();
-      
-      // 메인 페이지로 이동
-      window.location.href = '/';
+      const { orderId, amount, orderName, clientKey } = orderResponse.data;
+
+      if (!clientKey) {
+        throw new Error('Toss client key is missing.');
+      }
+
+      const tossPayments = await loadTossPayments(clientKey);
+      const payment = tossPayments.payment({
+        customerKey: `durudurub_${user.userId || user.id || 'member'}`,
+      });
+
+      await payment.requestPayment({
+        method: 'CARD',
+        amount: {
+          currency: 'KRW',
+          value: amount,
+        },
+        orderId,
+        orderName,
+        successUrl: `${window.location.origin}/payment/success`,
+        failUrl: `${window.location.origin}/payment/fail`,
+        customerEmail: user.email,
+        customerName: user.name || user.userId || '두루두룹 회원',
+        card: {
+          useEscrow: false,
+          flowMode: 'DEFAULT',
+          useCardPoint: false,
+          useAppCardOnly: false,
+        },
+      });
+
     } catch (error) {
       console.error('결제 실패:', error);
-      toast.error('결제 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+
+      const message = error instanceof Error
+        ? error.message
+        : '결제 처리 중 오류가 발생했습니다. 다시 시도해주세요.';
+
+      toast.error(message);
     } finally {
       setIsProcessing(false);
     }

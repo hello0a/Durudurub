@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -393,5 +394,47 @@ public class MypageController {
         log.info("****************favoriteClubs: {}", favoriteClubs);
 
         return "mypage/favorites";
+    }
+
+
+    // ==================토스 페이먼츠 : 구독 상태 동기화
+    @GetMapping("/api/subscription")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getSubscriptionStatus(Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        User user = userService.selectByUserId(principal.getName());
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Subscription subscription = subscriptionService.selectByUserNo(user.getNo());
+
+        boolean isPremium = false;
+        Date endDate = null;
+        Integer subscriptionUserNo = null;
+        String subscriptionStatus = null;
+
+        if (subscription != null) {
+            subscriptionUserNo = subscription.getUserNo();
+            subscriptionStatus = subscription.getStatus();
+            endDate = subscription.getEndDate();
+
+            boolean isActiveStatus = "ACTIVE".equalsIgnoreCase(subscription.getStatus());
+            boolean isMatchedUser = subscription.getUserNo() == user.getNo();
+            isPremium = isActiveStatus && isMatchedUser;
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("userNo", user.getNo());
+        response.put("subscriptionUserNo", subscriptionUserNo);
+        response.put("subscriptionStatus", subscriptionStatus);
+        response.put("isPremium", isPremium);
+        response.put("status", subscription != null ? subscription.getStatus() : null);
+        response.put("endDate", endDate != null ? endDate.toInstant().toString() : null);
+
+        return ResponseEntity.ok(response);
     }
 }

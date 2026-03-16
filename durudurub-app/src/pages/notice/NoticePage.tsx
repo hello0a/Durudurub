@@ -1,6 +1,6 @@
 import { ArrowLeft, Bell, Calendar, Eye, Plus, Edit2, Trash2, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { projectId, publicAnonKey } from 'utils/supabase/info';
+import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 import { Navbar } from '@/components/header/Navbar';
 import { toast } from 'sonner';
 

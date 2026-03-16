@@ -3,12 +3,14 @@ package com.aloha.durudurub.controller;
 import java.util.HashMap;
 import java.util.Map;
 import java.security.Principal;
+import java.util.Date;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,10 +19,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.aloha.durudurub.dto.Payment;
+import com.aloha.durudurub.dto.Subscription;
 import com.aloha.durudurub.dto.User;
 import com.aloha.durudurub.service.PaymentService;
 import com.aloha.durudurub.service.SubscriptionService;
 import com.aloha.durudurub.service.UserService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,12 +37,10 @@ public class PaymentController {
 	private final UserService userService;
 	private final PaymentService paymentService;
 	private final SubscriptionService subscriptionService;
+	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	@Value("${toss.payments.client-key:}")
 	private String tossClientKey;
-
-	@Value("${toss.payments.secret-key:}")
-	private String tossSecretKey;
 
 
 	public PaymentController(
@@ -102,11 +105,15 @@ public class PaymentController {
 	@PostMapping("/confirm/payment")
 	@ResponseBody
 	public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<String, Object> payload) {
-		String paymentKey = String.valueOf(payload.get("paymentKey"));
-		String orderId = String.valueOf(payload.get("orderId"));
-		String amount = String.valueOf(payload.get("amount"));
+		Object paymentKeyObj = payload.get("paymentKey");
+		Object orderIdObj = payload.get("orderId");
+		Object amountObj = payload.get("amount");
 
-		if (paymentKey == null || orderId == null || amount == null) {
+		String paymentKey = paymentKeyObj == null ? null : String.valueOf(paymentKeyObj);
+		String orderId = orderIdObj == null ? null : String.valueOf(orderIdObj);
+		String amount = amountObj == null ? null : String.valueOf(amountObj);
+
+		if (paymentKey == null || paymentKey.isBlank() || orderId == null || orderId.isBlank() || amount == null || amount.isBlank()) {
 			Map<String, Object> error = new HashMap<>();
 			error.put("code", "INVALID_REQUEST");
 			error.put("message", "paymentKey/orderId/amount is required");
@@ -138,8 +145,84 @@ public class PaymentController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
 		}
 
-		// TODO: Toss Payments 승인 API 호출
+		if ("DONE".equalsIgnoreCase(payment.getStatus())) {
+			Subscription subscription = subscriptionService.selectByUserNo(payment.getUserNo());
+			boolean isSubscriptionActive = subscription != null
+				&& "ACTIVE".equalsIgnoreCase(subscription.getStatus())
+				&& subscription.getEndDate() != null
+				&& subscription.getEndDate().after(new Date());
+
+			if (!isSubscriptionActive) {
+				int periodMonths = resolvePeriodByAmount(amountValue);
+				if (periodMonths <= 0) {
+					Map<String, Object> error = new HashMap<>();
+					error.put("code", "INVALID_PERIOD");
+					error.put("message", "unsupported amount");
+					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+				}
+				subscriptionService.activateSubscription(payment.getUserNo(), periodMonths);
+			}
+
+			Subscription refreshedSubscription = subscriptionService.selectByUserNo(payment.getUserNo());
+			boolean isPremium = refreshedSubscription != null
+				&& "ACTIVE".equalsIgnoreCase(refreshedSubscription.getStatus())
+				&& refreshedSubscription.getEndDate() != null
+				&& refreshedSubscription.getEndDate().after(new Date());
+
+			Map<String, Object> response = new HashMap<>();
+			response.put("status", payment.getStatus());
+			response.put("paymentKey", payment.getPaymentKey());
+			response.put("orderId", orderId);
+			response.put("amount", amountValue);
+			response.put("alreadyConfirmed", true);
+			response.put("isPremium", isPremium);
+			response.put("endDate", refreshedSubscription != null && refreshedSubscription.getEndDate() != null
+				? refreshedSubscription.getEndDate().toInstant().toString()
+				: null);
+			return ResponseEntity.ok(response);
+		}
+
 		log.info("confirmPayment payload: paymentKey={}, orderId={}, amount={}", paymentKey, orderId, amount);
+
+		Map<String, Object> tossResponse;
+		try {
+			tossResponse = paymentService.confirmTossPayment(paymentKey, orderId, amountValue);
+		} catch (HttpStatusCodeException e) {
+			log.error("Toss 승인 실패 - status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+
+			String upstreamCode = "TOSS_CONFIRM_FAILED";
+			String upstreamMessage = e.getResponseBodyAsString();
+
+			try {
+				JsonNode node = objectMapper.readTree(e.getResponseBodyAsString());
+				if (node.hasNonNull("code")) {
+					upstreamCode = node.get("code").asText();
+				}
+				if (node.hasNonNull("message")) {
+					upstreamMessage = node.get("message").asText();
+				}
+			} catch (Exception parseException) {
+				log.warn("Toss 오류 응답 JSON 파싱 실패: {}", parseException.getMessage());
+			}
+
+			Map<String, Object> error = new HashMap<>();
+			error.put("code", upstreamCode);
+			error.put("message", upstreamMessage);
+			return ResponseEntity.status(e.getStatusCode()).body(error);
+		} catch (IllegalStateException e) {
+			log.error("Toss 승인 설정/처리 오류 - orderId={}", orderId, e);
+			Map<String, Object> error = new HashMap<>();
+			error.put("code", "TOSS_CONFIRM_CONFIGURATION_ERROR");
+			error.put("message", e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+		} catch (Exception e) {
+			log.error("Toss 승인 호출 중 오류 - orderId={}", orderId, e);
+			Map<String, Object> error = new HashMap<>();
+			error.put("code", "TOSS_CONFIRM_FAILED");
+			error.put("message", e.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
+		}
+
 		paymentService.markApproved(orderId, paymentKey);
 
 		int periodMonths = resolvePeriodByAmount(amountValue);
@@ -151,11 +234,21 @@ public class PaymentController {
 		}
 		subscriptionService.activateSubscription(payment.getUserNo(), periodMonths);
 
+		Subscription refreshedSubscription = subscriptionService.selectByUserNo(payment.getUserNo());
+		boolean isPremium = refreshedSubscription != null
+			&& "ACTIVE".equalsIgnoreCase(refreshedSubscription.getStatus())
+			&& refreshedSubscription.getEndDate() != null
+			&& refreshedSubscription.getEndDate().after(new Date());
+
 		Map<String, Object> response = new HashMap<>();
-		response.put("status", "DONE");
-		response.put("paymentKey", paymentKey);
-		response.put("orderId", orderId);
-		response.put("amount", amountValue);
+		response.put("status", tossResponse.getOrDefault("status", "DONE"));
+		response.put("paymentKey", tossResponse.getOrDefault("paymentKey", paymentKey));
+		response.put("orderId", tossResponse.getOrDefault("orderId", orderId));
+		response.put("amount", tossResponse.getOrDefault("totalAmount", amountValue));
+		response.put("isPremium", isPremium);
+		response.put("endDate", refreshedSubscription != null && refreshedSubscription.getEndDate() != null
+			? refreshedSubscription.getEndDate().toInstant().toString()
+			: null);
 		return ResponseEntity.ok(response);
 	}
 
@@ -177,6 +270,13 @@ public class PaymentController {
 		@RequestBody Map<String, Object> payload,
 		Principal principal
 	) {
+		if (tossClientKey == null || tossClientKey.isBlank()) {
+			Map<String, Object> error = new HashMap<>();
+			error.put("code", "TOSS_NOT_CONFIGURED");
+			error.put("message", "toss client key is not configured");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+		}
+
 		if (principal == null) {
 			Map<String, Object> error = new HashMap<>();
 			error.put("code", "UNAUTHORIZED");
@@ -214,6 +314,7 @@ public class PaymentController {
 		response.put("orderId", orderId);
 		response.put("amount", amount);
 		response.put("orderName", orderName);
+		response.put("clientKey", tossClientKey);
 		return ResponseEntity.ok(response);
 	}
 

@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter } from 'react-router-dom';
 import { RootLayout } from '@/layouts/RootLayout';
 import { HomePage } from '@/pages/HomePage';
 import { ExplorePageWrapper } from '@/pages/explore/ExplorePageWrapper';
@@ -17,6 +17,8 @@ import {
   FavoritesPageWrapper,
   AdminPageWrapper,
   PaymentPageWrapper,
+  PaymentSuccessPageWrapper,
+  PaymentFailPageWrapper,
 } from '@/pages/other/OtherPagesWrapper';
 import { Error403Page } from '@/pages/error/Error403Page';
 import { Error404Page } from '@/pages/error/Error404Page';
@@ -90,6 +92,14 @@ export const router = createBrowserRouter([
       {
         path: 'payment',
         element: <PaymentPageWrapper />,
+      },
+      {
+        path: 'payment/success',
+        element: <PaymentSuccessPageWrapper />,
+      },
+      {
+        path: 'payment/fail',
+        element: <PaymentFailPageWrapper />,
       },
       // 에러 페이지들
       {

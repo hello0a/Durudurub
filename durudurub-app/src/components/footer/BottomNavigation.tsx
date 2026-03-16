@@ -1,7 +1,6 @@
 import { Home, User, LayoutGrid, Search, Sparkles, X } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SearchModal } from './modal/SearchModal';
 
 interface BottomNavigationProps {
   onHomeClick: () => void;
