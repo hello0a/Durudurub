@@ -1,11 +1,7 @@
 import { Heart, ArrowLeft, Users, MapPin, Calendar, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Navbar } from '@/components/Navbar';
-import { BottomNavigation } from '@/app/components/BottomNavigation';
-import { mockCommunities } from '@/app/data/mockCommunities';
-
-// 샘플 즐겨찾기 데이터 (처음 10개 모임)
-const sampleFavorites = mockCommunities.slice(0, 10);
+import { Navbar } from '@/components/header/Navbar';
+import { BottomNavigation } from '@/components/footer/BottomNavigation';
 
 interface FavoritesPageProps {
   onBack: () => void;
@@ -67,42 +63,29 @@ export function FavoritesPage({
     try {
       setLoading(true);
       
-      // 샘플 데이터 사용 (백엔드 연결 전까지)
-      setTimeout(() => {
-        const formattedFavorites = sampleFavorites.map(community => ({
-          id: community.id,
-          name: community.title,
-          description: community.description,
-          category: community.category,
-          memberCount: community.memberCount,
-          maxMembers: community.maxMembers,
-          imageUrl: community.imageUrl,
-          createdAt: community.createdAt
-        }));
-        setFavorites(formattedFavorites);
-        setLoading(false);
-      }, 500);
-      
-      // 백엔드 연결 시 사용할 코드 (주석 처리)
-      /*
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/favorites`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const response = await fetch('/api/likes/favorites', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
       if (response.ok) {
         const data = await response.json();
-        if (data.success) {
-          setFavorites(data.favorites || []);
-        }
+        const formattedFavorites = (data || []).map((club: any) => ({
+          id: String(club.no),
+          name: club.title || '',
+          description: (club.description || '').replace(/<[^>]*>/g, ''),
+          category: club.category?.name || '',
+          memberCount: club.currentMembers || 0,
+          maxMembers: club.maxMembers || 0,
+          imageUrl: club.thumbnailImg || '',
+          createdAt: club.createdAt || '',
+        }));
+        setFavorites(formattedFavorites);
       }
-      */
     } catch (error) {
       console.error('즐겨찾기 목록을 불러오는 중 오류:', error);
+    } finally {
       setLoading(false);
     }
   };
@@ -110,32 +93,24 @@ export function FavoritesPage({
   const handleRemoveFavorite = async (communityId: string) => {
     if (!accessToken) return;
 
-    // 로컬에서 즐겨찾기 목록에서 제거
-    setFavorites((prev) => prev.filter((c) => c.id !== communityId));
-    
-    // 백엔드 연결 시 사용할 코드 (주석 처리)
-    /*
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/communities/${communityId}/favorite`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const response = await fetch(`/api/likes/club/${communityId}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
       if (response.ok) {
         const data = await response.json();
-        if (data.success && !data.isFavorite) {
+        // liked가 false이면 즐겨찾기 해제된 것 → 목록에서 제거
+        if (!data.liked) {
           setFavorites((prev) => prev.filter((c) => c.id !== communityId));
         }
       }
     } catch (error) {
       console.error('즐겨찾기 제거 중 오류:', error);
     }
-    */
   };
 
   return (
