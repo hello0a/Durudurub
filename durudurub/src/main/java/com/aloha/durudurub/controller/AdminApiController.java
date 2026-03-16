@@ -181,7 +181,7 @@ public class AdminApiController {
     }
 
     // 배너 추가 (모달)
-    @PostMapping("/banners/insert")
+    @PostMapping("/banners/{insert}")
     @ResponseBody
     public int createdBanner(
         Banner banner,
@@ -192,7 +192,7 @@ public class AdminApiController {
         return bannerService.bannerInsert(banner, imageFile);
     }
     // 배너 수정 (모달)
-    @PutMapping("/banners/update/{no}")
+    @PutMapping("/banners/{no}")
     @ResponseBody
     public int updatedBanner(
         Banner banner,
@@ -204,7 +204,7 @@ public class AdminApiController {
         return bannerService.bannerUpdate(banner, imageFile);
     }
     // 배너 삭제 (모달)
-    @DeleteMapping("/banners/{no}")
+    @DeleteMapping("/banners/{no}/delete")
     @ResponseBody
     public int deleteBanner (
         @PathVariable("no") int no

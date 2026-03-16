@@ -555,6 +555,7 @@ export function AdminPage({
   useEffect(() => {
     loadCategories();
   }, [])
+  
   const loadCategories = async () => {
     setLoading(true);
     try {
@@ -747,11 +748,18 @@ export function AdminPage({
         }
       );
 
+      const data = await response.json()
       if (response.ok) {
-        const data = await response.json();
         console.log("bannerList >>>>> ", data)
-        setBanners(data);
       }
+
+      setBanners(
+        data.map((b: any) => ({
+          ...b,
+          isActive: b.isActive === 'Y'
+        }))
+      )
+      
     } catch (error) {
       // Mock 데이터 사용 (Supabase 연결 실패 시)
       console.log('배너 목록: Mock 데이터 사용 중');
@@ -819,12 +827,14 @@ export function AdminPage({
         )
       );
       console.log("res >>>> ", res)
+      console.log("banner.isActive", banner.isActive, typeof banner.isActive)
+
     } catch (error) {
       console.error("배너 활성화 변경 오류", error);
     }
   }
 
-  const saveBanner = () => {
+  const saveBanner = async () => {
     // 프론트엔드 전용 배너 저장
     if (!bannerFormData.title || !bannerFormData.linkUrl) {
       setBannerErrorMessage('제목과 링크 URL을 입력해주세요.');
@@ -832,59 +842,106 @@ export function AdminPage({
       return;
     }
 
-    let imageUrl = bannerFormData.imageUrl;
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const formData = new FormData();
+      formData.append("title", bannerFormData.title)
+      formData.append("linkUrl", bannerFormData.linkUrl)
+      formData.append("description", bannerFormData.description)
+      formData.append("seq", String(bannerFormData.seq))
+      formData.append("isActive", bannerFormData.isActive ? "Y" : "N")
+      if (bannerFormData.startDate) {
+        formData.append("startDate", bannerFormData.startDate);
+      }
 
-    // 이미지 파일이 업로드되었다면 로컬 URL 사용
-    if (uploadedImage) {
-      imageUrl = URL.createObjectURL(uploadedImage);
+      if (bannerFormData.endDate) {
+        formData.append("endDate", bannerFormData.endDate);
+      }
+
+      // 이미지 파일이 업로드되었다면 로컬 URL 사용
+      if (uploadedImage) {
+        formData.append("imageFile", uploadedImage)
+      } else if (bannerFormData.imageUrl) {
+        formData.append("imageUrl", bannerFormData.imageUrl)
+      }
+
+      const url = selectedBanner
+        ? `/api/admin/banners/${selectedBanner.no}`
+        : `/api/admin/banners/insert`;
+
+      const method = selectedBanner ? 'PUT' : 'POST'
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formData,
+        credentials: "include"
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("서버 에러:", errorText);
+        throw new Error(errorText);
+      }
+
+      const savedBanner = await res.json()
+
+      // 서버 데이터 기준으로 리스트 갱신
+      if (selectedBanner) {
+        // 수정
+        setBanners(banners.map(b => b.no === savedBanner.no ? savedBanner : b));
+        setToastMessage('배너가 수정되었습니다');
+      } else {
+        // 추가
+        setBanners([...banners, savedBanner]);
+        setToastMessage('배너가 추가되었습니다');
+      }
+
+      await loadBanners()
+
+      setShowBannerModal(false);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+
+    } catch (error) {
+      console.error(error);
+      setBannerErrorMessage('배너 저장 중 오류가 발생했습니다.')
+      setShowBannerModal(true)
     }
-
-    if (!imageUrl) {
-      setBannerErrorMessage('이미지 URL을 입력하거나 파일을 선택해주세요.');
-      setShowBannerErrorModal(true);
-      return;
-    }
-
-    // 배너 데이터 준비
-    const bannerData = {
-      title: bannerFormData.title,
-      imageUrl,
-      linkUrl: bannerFormData.linkUrl,
-      isActive: bannerFormData.isActive,
-      seq: bannerFormData.seq,
-      position: bannerFormData.position,
-      startDate: bannerFormData.startDate,
-      endDate: bannerFormData.endDate,
-      clickCount: bannerFormData.clickCount,
-      description: bannerFormData.description,
-    };
-
-    if (selectedBanner) {
-      // 수정
-      setBanners(banners.map(b => b.no === selectedBanner.no ? { ...b, ...bannerData } : b));
-      setToastMessage('배너가 수정되었습니다');
-    } else {
-      // 추가
-      const newBanner = {
-        no: 0,
-        createdAt: new Date().toISOString(),
-        ...bannerData,
-      };
-      setBanners([...banners, newBanner]);
-      setToastMessage('배너가 추가되었습니다');
-    }
-
-    setShowBannerModal(false);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
   };
 
-  const deleteBanner = (bannerId: number) => {
-    // 프론트엔드 전용 배너 삭제
-    setBanners(banners.filter(b => b.no !== bannerId));
-    setToastMessage('배너가 삭제되었습니다');
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
+  const deleteBanner = async (
+    bannerNo: number
+  ) => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const res = await fetch(`/api/admin/banners/${bannerNo}/delete`, { 
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        } 
+      });
+
+     if (!res.ok) {
+        const errorText = await res.text();
+        console.log("status:", res.status);
+        console.log("error:", errorText);
+        throw new Error("삭제 실패");
+      }
+
+      setBanners(prev =>
+        prev.filter(b =>
+          b.no !=  bannerNo
+        )
+      );
+
+    } catch (error) {
+      console.error(error)
+      setBannerErrorMessage('배너 삭제 중 오류가 발생했습니다.')
+      setShowBannerModal(true)
+    }  
   };
 
   // 관리자가 아닌 경우
@@ -1577,8 +1634,8 @@ export function AdminPage({
                                     isActive: banner.isActive,
                                     seq: banner.seq,
                                     position: banner.position,
-                                    startDate: banner.startDate,
-                                    endDate: banner.endDate,
+                                    startDate: banner.startDate ? banner.startDate.slice(0,10) : "",
+                                    endDate: banner.endDate ? banner.endDate.slice(0,10) : "",
                                     clickCount: banner.clickCount,
                                     description: banner.description || '',
                                   });
@@ -2173,7 +2230,7 @@ export function AdminPage({
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>노출 시작일</label>
                   <input
                     type="date"
-                    value={bannerFormData.startDate}
+                    value={bannerFormData.startDate ?? ""}
                     onChange={(e) => setBannerFormData({ ...bannerFormData, startDate: e.target.value })}
                     style={{
                       width: '100%',
@@ -2188,7 +2245,7 @@ export function AdminPage({
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>노출 종료일</label>
                   <input
                     type="date"
-                    value={bannerFormData.endDate}
+                    value={bannerFormData.endDate ?? ""}
                     onChange={(e) => setBannerFormData({ ...bannerFormData, endDate: e.target.value })}
                     style={{
                       width: '100%',
@@ -2314,11 +2371,11 @@ export function AdminPage({
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>노출 시작일</div>
-                <div className={styles.detailValue}>{selectedBanner.startDate}</div>
+                <div className={styles.detailValue}>{selectedBanner.startDate ? selectedBanner.startDate.slice(0,10) : ""}</div>
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>노출 종료일</div>
-                <div className={styles.detailValue}>{selectedBanner.endDate}</div>
+                <div className={styles.detailValue}>{selectedBanner.endDate ? selectedBanner.endDate.slice(0,10) : ""}</div>
               </div>
               <div className={styles.detailRow}>
                 <div className={styles.detailLabel}>정렬 순서</div>
