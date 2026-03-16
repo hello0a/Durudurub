@@ -4,7 +4,7 @@ interface HeroSectionProps {
 
 export function HeroSection({ onExploreClick }: HeroSectionProps) {
   return (
-    <section className="bg-[#F0F9F4] py-12 sm:py-14 lg:py-16">
+    <section className="hidden md:block bg-[#F0F9F4] py-12 sm:py-14 lg:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
           {/* 텍스트 영역 - 모바일에서 숨김 */}

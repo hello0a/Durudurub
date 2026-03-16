@@ -14,6 +14,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/explore" element={<ExploreWrapper />} />
         <Route path="/club/:id" element={<ClubDetailWrapper />} />
+        <Route path="/signup" element= {<ExploreWrapper />} />
       </Routes>
     </>
   );

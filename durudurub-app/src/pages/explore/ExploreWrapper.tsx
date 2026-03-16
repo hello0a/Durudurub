@@ -15,7 +15,7 @@ export default function ExploreWrapper() {
       onNoticeClick={() => navigate('/notice')}
       onMyPageClick={() => navigate('/mypage')}
       onMiniGameClick={() => navigate('/minigame')}
-      onMyMeetingsClick={() => navigate('/mypage')}
+      onMyMeetingsClick={() => navigate('/meetings')}
       onPaymentClick={() => navigate('/payment')}
       onLogout={() => { /* TODO: 로그아웃 처리 */ }}
       user={null}

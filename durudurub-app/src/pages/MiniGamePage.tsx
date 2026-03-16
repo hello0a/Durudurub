@@ -8,7 +8,6 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { GameAdModal } from '@/components/modal/GameAdModal';
 
 interface MiniGamePageProps {
-  onBack: () => void;
   user?: any;
   accessToken?: string | null;
   onSignupClick?: () => void;
@@ -24,7 +23,7 @@ interface MiniGamePageProps {
 
 type GameType = 'menu' | 'ladder' | 'wheel' | 'lottery';
 
-export function MiniGamePage({ onBack, user, accessToken, onSignupClick, onLoginClick, onLogoClick, onNoticeClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, profileImage, onLogout }: MiniGamePageProps) {
+export function MiniGamePage({ user, accessToken, onSignupClick, onLoginClick, onLogoClick, onNoticeClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, profileImage, onLogout }: MiniGamePageProps) {
   const [currentGame, setCurrentGame] = useState<GameType>('menu');
   const [showAdModal, setShowAdModal] = useState(false);
   const [adShown, setAdShown] = useState(false);

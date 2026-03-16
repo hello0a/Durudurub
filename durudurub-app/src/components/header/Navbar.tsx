@@ -1,6 +1,7 @@
 import { Menu, X, User, Bell, Gamepad2, Shield, Search, Sparkles, MapPin, Users } from 'lucide-react';
 import { DurupLogo } from '@/character/DurupLogo';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // 미니게임
 
 // Navbar 컴포넌트가 받을 수 있는 함수 목록 정의
 interface NavbarProps {
@@ -399,6 +400,7 @@ function LoginRequiredModal({ onClose, onLoginClick }: { onClose: () => void; on
 }
 
 export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, onAdminClick, onPaymentClick, onExploreClick, onCommunityClick, communities, user, profileImage, onLogout }: NavbarProps) {
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -506,7 +508,8 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
   }, [isUserMenuOpen]);
 
   return (
-    <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
+    <>
+    <nav className="bg-white border-b border-gray-100 fixed top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-25">
           {/* 로고 */}
@@ -545,7 +548,7 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
             {/* 미니 게임 버튼 (모든 사용자에게 표시) */}
             <button
               className="text-lg border-2 border-[#00A651] text-[#00A651] px-6 py-2.5 rounded-full hover:bg-[#00A651] hover:text-white transition-colors font-medium flex items-center gap-2"
-              onClick={onMiniGameClick}
+              onClick={() => navigate('/minigame')}
             >
               <Gamepad2 className="w-5 h-5" />
               미니게임
@@ -670,7 +673,7 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
             {/* 미니게임 버튼 (모바일) */}
             <button
               className="flex items-center text-gray-700 hover:text-[#00A651] py-2 w-full text-left"
-              onClick={onMiniGameClick}
+              onClick={() => navigate('/minigame')} // 미니게임 페이지 이동
             >
               <Gamepad2 className="w-5 h-5 mr-2" />
               미니게임
@@ -744,12 +747,15 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
         )}
       </div>
 
-      {/* AI 검색 모달 */}
-      {showAISearchModal && <AISearchModal onClose={() => setShowAISearchModal(false)} onSearch={handleAISearch} isPremiumUser={isPremiumUser} aiSearchCount={aiSearchCount} onPaymentClick={onPaymentClick} communities={communities} onCommunityClick={onCommunityClick} />}
-      {/* 구독 유도 모달 */}
-      {showSubscriptionModal && <SubscriptionModal onClose={() => setShowSubscriptionModal(false)} onPaymentClick={onPaymentClick} />}
-      {/* 로그인 유도 모달 */}
-      {showLoginRequiredModal && <LoginRequiredModal onClose={() => setShowLoginRequiredModal(false)} onLoginClick={onLoginClick} />}
     </nav>
+    <div className="h-25" />
+
+    {/* AI 검색 모달 */}
+    {showAISearchModal && <AISearchModal onClose={() => setShowAISearchModal(false)} onSearch={handleAISearch} isPremiumUser={isPremiumUser} aiSearchCount={aiSearchCount} onPaymentClick={onPaymentClick} communities={communities} onCommunityClick={onCommunityClick} />}
+    {/* 구독 유도 모달 */}
+    {showSubscriptionModal && <SubscriptionModal onClose={() => setShowSubscriptionModal(false)} onPaymentClick={onPaymentClick} />}
+    {/* 로그인 유도 모달 */}
+    {showLoginRequiredModal && <LoginRequiredModal onClose={() => setShowLoginRequiredModal(false)} onLoginClick={onLoginClick} />}
+    </>
   );
 }
