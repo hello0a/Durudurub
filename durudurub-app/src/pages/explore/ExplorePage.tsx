@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, MapPin, Users, Calendar, Heart, ArrowLeft, X, LogIn, Plus } from 'lucide-react';
+import { Search, MapPin, Users, Calendar, Star, ArrowLeft, X, LogIn, Plus } from 'lucide-react';
 import { Navbar } from '@/components/header/Navbar';
 
 
@@ -399,11 +399,11 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
                       onClick={(e) => toggleFavorite(communityId, e)}
                       className="absolute top-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110"
                     >
-                      <Heart
+                      <Star
                         className={`w-5 h-5 ${
                           favorites.has(String(community.no))
-                            ? 'fill-red-500 text-red-500'
-                            : 'text-gray-400'
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-500'
                         }`}
                       />
                     </button>
@@ -483,11 +483,11 @@ export function ExplorePage({ onBack, onCommunityClick, onLoginClick, onSignupCl
                       onClick={(e) => toggleFavorite(communityId, e)}
                       className="absolute top-1 right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md"
                     >
-                      <Heart
+                      <Star
                         className={`w-4 h-4 ${
                           favorites.has(String(community.no))
-                            ? 'fill-red-500 text-red-500'
-                            : 'text-gray-400'
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-500'
                         }`}
                       />
                     </button>
