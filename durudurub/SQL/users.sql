@@ -22,4 +22,8 @@ CREATE TABLE `users` (
     -- UK 는 특별한 일 없으면 건들지 말아주세요 (특히 users 테이블)
 );
 
+ALTER TABLE `users`
+ADD provider VARCHAR(20),       -- 소셜 로그인 ROOT 사이트
+ADD provider_id VARCHAR(100);   -- 소셜 로그인 이메일 주소
+
 SET FOREIGN_KEY_CHECKS = 1;

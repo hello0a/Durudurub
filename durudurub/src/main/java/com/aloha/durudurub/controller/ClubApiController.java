@@ -8,10 +8,12 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -275,6 +277,72 @@ public class ClubApiController {
         } catch (Exception e) {
             log.error("모임 수정 오류", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("모임 수정 중 오류가 발생했습니다.");
+        }
+    }
+
+    /**
+     * 게시글 작성 API
+     */
+    @PostMapping("/{no}/boards")
+    public ResponseEntity<?> createBoard(@PathVariable("no") int no,
+                                         @RequestBody Map<String, String> payload,
+                                         Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
+        }
+        try {
+            User user = userService.selectByUserId(principal.getName());
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("사용자를 찾을 수 없습니다.");
+            }
+
+            Board board = new Board();
+            board.setClubNo(no);
+            board.setWriterNo(user.getNo());
+            board.setContent(payload.get("content"));
+            board.setTitle("");
+            board.setIsNotice("N");
+
+            int result = boardService.insert(board);
+            if (result > 0) {
+                Board saved = boardService.selectByNo(board.getNo());
+                return ResponseEntity.ok(saved);
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("게시글 작성 실패");
+        } catch (Exception e) {
+            log.error("게시글 작성 오류", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("게시글 작성 중 오류 발생");
+        }
+    }
+
+    /**
+     * 게시글 삭제 API
+     */
+    @DeleteMapping("/{no}/boards/{boardNo}")
+    public ResponseEntity<?> deleteBoard(@PathVariable("no") int no,
+                                         @PathVariable("boardNo") int boardNo,
+                                         Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
+        }
+        try {
+            User user = userService.selectByUserId(principal.getName());
+            Board board = boardService.selectByNo(boardNo);
+            if (board == null) {
+                return ResponseEntity.notFound().build();
+            }
+            Club club = clubService.selectByNo(no);
+            if (board.getWriterNo() != user.getNo() && club.getHostNo() != user.getNo()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("삭제 권한이 없습니다.");
+            }
+            int result = boardService.delete(boardNo);
+            if (result > 0) {
+                return ResponseEntity.ok(Map.of("status", "SUCCESS"));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("삭제 실패");
+        } catch (Exception e) {
+            log.error("게시글 삭제 오류", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("삭제 중 오류 발생");
         }
     }
 

@@ -63,8 +63,8 @@ CREATE TABLE `users` (
 );
 -- 소셜 로그인 추가
 ALTER TABLE `users`
-ADD provider VARCHAR(20),
-ADD provider_id VARCHAR(100);
+ADD provider VARCHAR(20),       -- 소셜 로그인 ROOT사이트
+ADD provider_id VARCHAR(100);   -- 소셜 로그인 이메일 주소
 
 -- 2. user_auth (회원 권한부여)
 

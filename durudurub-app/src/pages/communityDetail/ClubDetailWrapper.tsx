@@ -75,6 +75,7 @@ export default function ClubDetailWrapper() {
     isLiked: b.liked || false,
     images: b.imageList?.map((img: any) => img.filePath) || [],
     comments: [],
+    commentCount: b.commentCount || 0,
   }));
 
   // 모임 일정
