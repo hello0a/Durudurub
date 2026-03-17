@@ -85,6 +85,7 @@ interface Post {
   isLiked: boolean;
   images?: string[];
   comments: Comment[];
+  commentCount?: number;
 }
 
 interface MeetingSchedule {
@@ -335,36 +336,66 @@ export function CommunityDetailPage({
     setSelectedImages(selectedImages.filter((_, i) => i !== index));
   };
 
-  const handlePostSubmit = () => {
+  const handlePostSubmit = async () => {
     if ((newPost.trim() || selectedImages.length > 0) && user) {
-      const post: Post = {
-        id: posts.length + 1,
-        author: user.nickname || user.email?.split('@')[0] || '익명',
-        content: newPost,
-        date: '방금 전',
-        likes: 0,
-        isLiked: false,
-        images: selectedImages.length > 0 ? [...selectedImages] : undefined,
-        comments: [],
-      };
-      setPosts([post, ...posts]);
-      setNewPost('');
-      setSelectedImages([]);
+      try {
+        const token = sessionStorage.getItem('accessToken');
+        const res = await fetch(`/api/clubs/${id}/boards`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ content: newPost }),
+        });
+        if (!res.ok) throw new Error('게시글 작성 실패');
+        const saved = await res.json();
+        const post: Post = {
+          id: saved.no,
+          author: user.nickname || user.email?.split('@')[0] || '익명',
+          content: saved.content || newPost,
+          date: '방금 전',
+          likes: 0,
+          isLiked: false,
+          images: selectedImages.length > 0 ? [...selectedImages] : undefined,
+          comments: [],
+        };
+        setPosts([post, ...posts]);
+        setNewPost('');
+        setSelectedImages([]);
+        toast.success('게시글이 등록되었습니다');
+      } catch (e) {
+        console.error('게시글 작성 오류:', e);
+        toast.error('게시글 작성에 실패했습니다');
+      }
     }
   };
 
-  const handleLikePost = (postId: number) => {
+  const handleLikePost = async (postId: number) => {
     if (memberStatus !== 'approved') {
       setShowMemberOnlyModal(true);
       return;
     }
-    setPosts(posts.map(post => 
-      post.id === postId ? { 
-        ...post, 
-        likes: post.isLiked ? post.likes - 1 : post.likes + 1, 
-        isLiked: !post.isLiked 
-      } : post
-    ));
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const res = await fetch(`/api/likes/board/${postId}`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+      if (!res.ok) throw new Error('좋아요 처리 실패');
+      const data = await res.json();
+      setPosts(posts.map(post =>
+        post.id === postId ? {
+          ...post,
+          likes: data.count,
+          isLiked: data.liked,
+        } : post
+      ));
+    } catch (e) {
+      console.error('좋아요 오류:', e);
+    }
   };
 
   const handleReportClick = (targetUser: string) => {
@@ -393,7 +424,7 @@ export function CommunityDetailPage({
     setShowReportModal(true);
   };
 
-  const handleCommentSubmit = (postId: number) => {
+  const handleCommentSubmit = async (postId: number) => {
     const commentText = commentInputs[postId]?.trim();
     if (!commentText || !user) return;
 
@@ -402,24 +433,71 @@ export function CommunityDetailPage({
       return;
     }
 
-    const newComment: Comment = {
-      id: Date.now(),
-      author: user.nickname || user.email?.split('@')[0] || '익명',
-      content: commentText,
-      date: '방금 전',
-    };
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ boardNo: postId, content: commentText }),
+      });
+      if (!res.ok) throw new Error('댓글 작성 실패');
 
-    setPosts(posts.map(post => 
-      post.id === postId 
-        ? { ...post, comments: [...post.comments, newComment] }
-        : post
-    ));
+      // 댓글 목록 다시 조회
+      const commentsRes = await fetch(`/api/comments/board/${postId}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      });
+      const commentsData = commentsRes.ok ? await commentsRes.json() : [];
 
-    setCommentInputs({ ...commentInputs, [postId]: '' });
+      const mappedComments = commentsData.map((c: any) => ({
+        id: c.no,
+        author: c.writer?.username || '익명',
+        content: c.content,
+        date: c.createdAt ? new Date(c.createdAt).toLocaleDateString('ko-KR') : '방금 전',
+      }));
+
+      setPosts(posts.map(post =>
+        post.id === postId
+          ? { ...post, comments: mappedComments, commentCount: mappedComments.length }
+          : post
+      ));
+
+      setCommentInputs({ ...commentInputs, [postId]: '' });
+      toast.success('댓글이 등록되었습니다');
+    } catch (e) {
+      console.error('댓글 작성 오류:', e);
+      toast.error('댓글 작성에 실패했습니다');
+    }
   };
 
-  const toggleComments = (postId: number) => {
-    setShowComments({ ...showComments, [postId]: !showComments[postId] });
+  const toggleComments = async (postId: number) => {
+    const isOpening = !showComments[postId];
+    setShowComments({ ...showComments, [postId]: isOpening });
+
+    if (isOpening) {
+      try {
+        const token = sessionStorage.getItem('accessToken');
+        const res = await fetch(`/api/comments/board/${postId}`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const commentsData = await res.json();
+          const mappedComments = commentsData.map((c: any) => ({
+            id: c.no,
+            author: c.writer?.username || '익명',
+            content: c.content,
+            date: c.createdAt ? new Date(c.createdAt).toLocaleDateString('ko-KR') : '',
+          }));
+          setPosts(prev => prev.map(post =>
+            post.id === postId ? { ...post, comments: mappedComments, commentCount: mappedComments.length } : post
+          ));
+        }
+      } catch (e) {
+        console.error('댓글 로딩 오류:', e);
+      }
+    }
   };
 
   // 게시물 삭제 함수
@@ -428,10 +506,21 @@ export function CommunityDetailPage({
     setShowDeletePostModal(true);
   };
 
-  const confirmDeletePost = () => {
+  const confirmDeletePost = async () => {
     if (postToDelete !== null) {
-      setPosts(posts.filter(post => post.id !== postToDelete));
-      toast.success('게시물이 삭제되었습니다');
+      try {
+        const token = sessionStorage.getItem('accessToken');
+        const res = await fetch(`/api/clubs/${id}/boards/${postToDelete}`, {
+          method: 'DELETE',
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
+        if (!res.ok) throw new Error('삭제 실패');
+        setPosts(posts.filter(post => post.id !== postToDelete));
+        toast.success('게시물이 삭제되었습니다');
+      } catch (e) {
+        console.error('게시글 삭제 오류:', e);
+        toast.error('게시물 삭제에 실패했습니다');
+      }
       setShowDeletePostModal(false);
       setPostToDelete(null);
     }
@@ -443,14 +532,27 @@ export function CommunityDetailPage({
     setShowDeleteCommentModal(true);
   };
 
-  const confirmDeleteComment = () => {
+  const confirmDeleteComment = async () => {
     if (commentToDelete) {
-      setPosts(posts.map(post => 
-        post.id === commentToDelete.postId 
-          ? { ...post, comments: post.comments.filter(comment => comment.id !== commentToDelete.commentId) }
-          : post
-      ));
-      toast.success('댓글이 삭제되었습니다');
+      try {
+        const token = sessionStorage.getItem('accessToken');
+        const res = await fetch(`/api/comments/${commentToDelete.commentId}`, {
+          method: 'DELETE',
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
+        if (!res.ok) throw new Error('삭제 실패');
+        setPosts(posts.map(post => {
+          if (post.id === commentToDelete.postId) {
+            const filtered = post.comments.filter(comment => comment.id !== commentToDelete.commentId);
+            return { ...post, comments: filtered, commentCount: filtered.length };
+          }
+          return post;
+        }));
+        toast.success('댓글이 삭제되었습니다');
+      } catch (e) {
+        console.error('댓글 삭제 오류:', e);
+        toast.error('댓글 삭제에 실패했습니다');
+      }
       setShowDeleteCommentModal(false);
       setCommentToDelete(null);
     }
@@ -574,6 +676,15 @@ export function CommunityDetailPage({
 
       {/* 메인 컨텐츠 */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10 pb-20">
+        {/* 뒤로가기 버튼 (데스크톱) */}
+        <button
+          onClick={onBack}
+          className="hidden md:flex items-center justify-center w-12 h-12 bg-[#00A651] text-white rounded-full shadow-lg hover:bg-[#008E41] transition-all duration-200 hover:shadow-xl mb-4"
+          aria-label="뒤로가기"
+        >
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+
         {/* 카드 컨테이너 */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* 헤더 정보 */}
@@ -910,7 +1021,7 @@ export function CommunityDetailPage({
                         >
                           <MessageSquare className="w-5 h-5 text-gray-500" />
                           <span className="text-sm font-medium text-gray-500">
-                            {post.comments.length}
+                            {post.commentCount ?? post.comments.length}
                           </span>
                         </button>
                       </div>

@@ -6,7 +6,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,7 +27,6 @@ import lombok.extern.slf4j.Slf4j;
  * 댓글 API 컨트롤러 (Ajax)
  */
 @Slf4j
-@CrossOrigin("*")
 @RestController
 @RequestMapping("/api/comments")
 public class CommentController {
@@ -83,7 +81,13 @@ public class CommentController {
     @PostMapping()
     public ResponseEntity<?> create(@RequestBody Comment comment, Principal principal) {
         try {
+            if (principal == null) {
+                return new ResponseEntity<>("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+            }
             User user = userService.selectByUserId(principal.getName());
+            if (user == null) {
+                return new ResponseEntity<>("사용자를 찾을 수 없습니다.", HttpStatus.UNAUTHORIZED);
+            }
             comment.setWriterNo(user.getNo());
 
             int result = commentService.insert(comment);
