@@ -41,6 +41,7 @@ export function CategoryPageWrapper() {
       onMeetingClick={handleMeetingClick}
       onLoginClick={() => navigate('/login')}
       onCreateClick={() => navigate('/community/create')}
+      onLogoClick={() => navigate('/')}
     />
   );
 }
