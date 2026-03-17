@@ -44,7 +44,7 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
     title: '',
     content: '',
     category: '공지' as Notice['category'],
-    isImportant: false,
+    important: false,
   });
 
   const isAdmin = user?.isAdmin === true;
@@ -312,8 +312,8 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={formData.isImportant}
-                  onChange={(e) => setFormData({ ...formData, isImportant: e.target.checked })}
+                  checked={formData.important}
+                  onChange={(e) => setFormData({ ...formData, important: e.target.checked })}
                   className="w-4 h-4 text-[#00A651] rounded focus:ring-[#00A651]"
                 />
                 <span className="text-sm font-medium text-gray-700">중요 공지사항으로 표시</span>

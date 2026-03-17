@@ -2,6 +2,7 @@ import { MapPin, Calendar, Clock, Users, Star, ArrowLeft, MessageSquare, Lock, T
 import { useState, useEffect, useRef } from 'react';
 import api from '@/api/axios';
 import L from 'leaflet';
+import { BannerData } from '@/pages/admin/AdminPage';
 import 'leaflet/dist/leaflet.css';
 
 import DatePicker from 'react-datepicker';
@@ -173,6 +174,46 @@ export function CommunityDetailPage({
   // 멤버 추방 모달 state
   const [showKickMemberModal, setShowKickMemberModal] = useState(false);
   const [memberToKick, setMemberToKick] = useState<{ id: number; name: string } | null>(null);
+
+  // 광고 모달
+  const [popupBanner, setPopupBanner] = useState<BannerData | null>(null);
+  const [banners, setBanners] = useState<BannerData[]>([]);
+  useEffect(() => {
+    const loadBanners = async () => {
+      try {
+      const token = sessionStorage.getItem('accessToken');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch('/api/admin/banners', {headers});
+        const data = await res.json();
+        setBanners(
+          data.map((b: any) => ({
+            ...b,
+            isActive: b.isActive === 'Y'
+          }))
+        );
+      } catch (error) {
+        console.error('배너 불러오기 실패', error);
+      }
+    };
+    
+    loadBanners();
+  }, []);
+
+  useEffect(() => {
+    if (!banners.length) return;
+    
+    const popupBanners = banners.filter(
+      b => b.position === 'POPUP' && b.isActive
+      // b => b.position === 'MAIN' && b.isActive
+    );
+
+    if (popupBanners.length === 0) return;
+
+    const randomIndex = Math.floor(Math.random() * popupBanners.length);
+    setPopupBanner(popupBanners[randomIndex]);
+    setShowAdModal(true);
+  }, [banners]);
 
   // 지나간 일정 자동 삭제
   useEffect(() => {
@@ -1124,8 +1165,8 @@ export function CommunityDetailPage({
             {/* 광고 이미지 */}
             <div className="relative h-64 bg-gradient-to-br from-blue-500 to-cyan-500">
               <img
-                src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800"
-                alt="광고"
+                src={popupBanner?.imageUrl}
+                alt={popupBanner?.title}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
@@ -1133,7 +1174,7 @@ export function CommunityDetailPage({
                   <div className="bg-yellow-400 text-gray-900 text-xs font-bold px-3 py-1 rounded-full mb-2 inline-block">
                     SPONSORED AD
                   </div>
-                  <h3 className="text-white text-2xl font-bold">Premium Wireless Headphones</h3>
+                  <h3 className="text-white text-2xl font-bold">{popupBanner?.title}</h3>
                 </div>
               </div>
             </div>
@@ -1142,8 +1183,7 @@ export function CommunityDetailPage({
             <div className="p-8">
               <h4 className="text-xl font-bold text-gray-900 mb-3">몰입감 넘치는 사운드 경험</h4>
               <p className="text-gray-600 mb-6">
-                최신 노이즈 캔슬링 기술과 프리미엄 음질로 당신만의 음악 세계를 즐겨보세요. 
-                30시간 재생 가능한 배터리로 하루 종일 자유롭게!
+                {popupBanner?.description}
               </p>
               <div className="flex items-baseline gap-2 mb-6">
                 <span className="text-gray-400 line-through text-lg">₩299,000</span>
@@ -1154,7 +1194,10 @@ export function CommunityDetailPage({
                 className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition-colors shadow-lg"
                 onClick={() => {
                   setShowAdModal(false);
-                  // 광고 랜딩 페이지로 이동하는 로직 추가 가능
+
+                  if (popupBanner?.linkUrl) {
+                    window.location.href = popupBanner.linkUrl;
+                  }
                 }}
               >
                 자세히 보기

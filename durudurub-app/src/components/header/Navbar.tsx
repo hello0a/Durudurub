@@ -2,6 +2,7 @@ import { Menu, X, User, Bell, Gamepad2, Shield, Search, Sparkles, MapPin, Users 
 import { DurupLogo } from '@/character/DurupLogo';
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useNavigate } from 'react-router-dom';
 
 // Navbar 컴포넌트가 받을 수 있는 함수 목록 정의
 interface NavbarProps {
@@ -443,6 +444,7 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
   const user = contextUser || userProp;
   const profileImage = contextProfileImage || profileImageProp;
   const onLogout = onLogoutProp || handleLogout;
+  const navigate = useNavigate();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -494,6 +496,7 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
   };
 
   const handleUserMenuClick = (action: string) => {
+
     if (!user) {
       // 로그인이 안 되어 있으면 회원가입 페이지로
       onSignupClick?.();
@@ -507,6 +510,13 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
         console.log("=====================");
         onMyMeetingsClick?.();
       } else if (action === 'admin') {
+        console.log("++++++++++++++++ admin");
+
+        if (onAdminClick) {
+          onAdminClick();
+        } else {
+          navigate("/admin")
+        }
         onAdminClick?.();
       } else if (action === 'notice') {
         onNoticeClick?.();

@@ -6,6 +6,7 @@ import { WinnerDrawGame } from '@/components/games/WinnerDrawGame';
 import { Navbar } from '@/components/header/Navbar';
 import { BottomNavigation } from '@/components/footer/BottomNavigation';
 import { GameAdModal } from '@/components/modal/GameAdModal';
+import { BannerData } from '@/pages/admin/AdminPage';
 
 interface MiniGamePageProps {
   onBack: () => void;
@@ -28,6 +29,7 @@ export function MiniGamePage({ onBack, user, accessToken, onSignupClick, onLogin
   const [currentGame, setCurrentGame] = useState<GameType>('menu');
   const [showAdModal, setShowAdModal] = useState(false);
   const [adShown, setAdShown] = useState(false);
+  const [adTimer, setAdTimer] = useState(15);
 
   const gameCards = [
     {
@@ -52,6 +54,57 @@ export function MiniGamePage({ onBack, user, accessToken, onSignupClick, onLogin
       color: 'from-green-500 to-green-600',
     },
   ];
+
+
+    // 광고 모달
+    const [popupBanner, setPopupBanner] = useState<BannerData | null>(null);
+    const [banners, setBanners] = useState<BannerData[]>([]);
+    useEffect(() => {
+      const loadBanners = async () => {
+        try {
+        const token = sessionStorage.getItem('accessToken');
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+          const res = await fetch('/api/admin/banners', {headers});
+          const data = await res.json();
+          setBanners(
+            data.map((b: any) => ({
+              ...b,
+              isActive: b.isActive === 'Y'
+            }))
+          );
+        } catch (error) {
+          console.error('배너 불러오기 실패', error);
+        }
+      };
+      
+      loadBanners();
+    }, []);
+  
+    useEffect(() => {
+      if (!banners.length) return;
+      
+      const popupBanners = banners.filter(
+        b => b.position === 'POPUP' && b.isActive
+        // b => b.position === 'MAIN' && b.isActive
+      );
+  
+      if (popupBanners.length === 0) return;
+  
+      const randomIndex = Math.floor(Math.random() * popupBanners.length);
+      setPopupBanner(popupBanners[randomIndex]);
+      setShowAdModal(true);
+    }, [banners]);
+    useEffect(() => {
+    if (showAdModal) {
+      const timer = setInterval(() => {
+        setAdTimer(prev => prev - 1);
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [showAdModal]);
+  
 
   // 게임 진입 시 광고 표시 (프리미엄 및 관리자 제외)
   useEffect(() => {
@@ -165,7 +218,72 @@ export function MiniGamePage({ onBack, user, accessToken, onSignupClick, onLogin
       </div>
 
       {/* 광고 모달 */}
-      {showAdModal && <GameAdModal onClose={() => setShowAdModal(false)} />}
+      {/* {showAdModal && <GameAdModal onClose={() => setShowAdModal(false)} />} */}
+        {showAdModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden relative">
+            {/* X 버튼 - 15초 후 활성화 */}
+            <button
+              onClick={() => adTimer <= 0 && setShowAdModal(false)}
+              disabled={adTimer > 0}
+              className={`absolute top-4 right-4 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                adTimer > 0 
+                  ? 'bg-gray-300 text-gray-400 cursor-not-allowed' 
+                  : 'bg-gray-800 text-white hover:bg-gray-700'
+              }`}
+              aria-label="닫기"
+            >
+              {adTimer > 0 ? (
+                <span className="text-sm font-bold">{adTimer}</span>
+              ) : (
+                <X className="w-5 h-5" />
+              )}
+            </button>
+
+            {/* 광고 이미지 */}
+            <div className="relative h-64 bg-gradient-to-br from-blue-500 to-cyan-500">
+              <img
+                src={popupBanner?.imageUrl}
+                alt={popupBanner?.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
+                <div>
+                  <div className="bg-yellow-400 text-gray-900 text-xs font-bold px-3 py-1 rounded-full mb-2 inline-block">
+                    SPONSORED AD
+                  </div>
+                  <h3 className="text-white text-2xl font-bold">{popupBanner?.title}</h3>
+                </div>
+              </div>
+            </div>
+
+            {/* 광고 내용 */}
+            <div className="p-8">
+              <h4 className="text-xl font-bold text-gray-900 mb-3">몰입감 넘치는 사운드 경험</h4>
+              <p className="text-gray-600 mb-6">
+                {popupBanner?.description}
+              </p>
+              <div className="flex items-baseline gap-2 mb-6">
+                <span className="text-gray-400 line-through text-lg">₩299,000</span>
+                <span className="text-3xl font-bold text-blue-600">₩199,000</span>
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">33% OFF</span>
+              </div>
+              <button
+                className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition-colors shadow-lg"
+                onClick={() => {
+                  setShowAdModal(false);
+
+                  if (popupBanner?.linkUrl) {
+                    window.location.href = popupBanner.linkUrl;
+                  }
+                }}
+              >
+                자세히 보기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 모바일 하단 네비게이션 */}
       <BottomNavigation

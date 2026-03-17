@@ -41,6 +41,7 @@
         UPDATE notices
             SET title = #{title}
                 , content = #{content}
+                , category = #{category}
                 , is_important = CASE WHEN #{important} THEN 'Y' ELSE 'N' END
         WHERE no = #{noticeNo}
     </update>
