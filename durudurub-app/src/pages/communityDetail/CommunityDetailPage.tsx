@@ -9,6 +9,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { toast } from 'sonner';
 import { EditCommunityModal } from '../communityEdit/EditCommunityModal';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 
 // 커스텀 마커 아이콘 생성
 const customIcon = L.divIcon({
@@ -182,10 +183,10 @@ export function CommunityDetailPage({
   useEffect(() => {
     const loadBanners = async () => {
       try {
-      const token = sessionStorage.getItem('accessToken');
-      const headers: Record<string, string> = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-        const res = await fetch('/api/admin/banners', {headers});
+      // const token = sessionStorage.getItem('accessToken');
+      // const headers: Record<string, string> = {};
+      // if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch('/api/banners');
         const data = await res.json();
         setBanners(
           data.map((b: any) => ({
@@ -1252,7 +1253,7 @@ export function CommunityDetailPage({
       )}
 
       {/* 광고 모달 */}
-      {showAdModal && (
+      {showAdModal && popupBanner && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden relative">
             {/* X 버튼 - 15초 후 활성화 */}
@@ -1275,7 +1276,7 @@ export function CommunityDetailPage({
 
             {/* 광고 이미지 */}
             <div className="relative h-64 bg-gradient-to-br from-blue-500 to-cyan-500">
-              <img
+              <ImageWithFallback
                 src={popupBanner?.imageUrl}
                 alt={popupBanner?.title}
                 className="w-full h-full object-cover"

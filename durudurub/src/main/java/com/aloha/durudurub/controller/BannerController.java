@@ -26,7 +26,7 @@ public class BannerController {
         List<Banner> banners = bannerService.bannerList()
             .stream()
             .filter(b -> "Y".equals(b.getIsActive()))   // 활성화
-            .filter(b -> "MAIN".equals(b.getPosition())) // 메인 배너만
+            // .filter(b -> "MAIN".equals(b.getPosition())) // 메인 배너만
             .toList();
 
         return ResponseEntity.ok(banners);

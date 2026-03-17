@@ -5,6 +5,7 @@ import { WheelSpinnerGame } from '@/components/games/WheelSpinnerGame';
 import { WinnerDrawGame } from '@/components/games/WinnerDrawGame';
 import { GameAdModal } from '@/components/modal/GameAdModal';
 import { BannerData } from '@/pages/admin/AdminPage';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 
 interface MiniGamePageProps {
   onBack: () => void;
@@ -60,10 +61,10 @@ export function MiniGamePage({ onBack, user, accessToken, onSignupClick, onLogin
     useEffect(() => {
       const loadBanners = async () => {
         try {
-        const token = sessionStorage.getItem('accessToken');
-        const headers: Record<string, string> = {};
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-          const res = await fetch('/api/admin/banners', {headers});
+        // const token = sessionStorage.getItem('accessToken');
+        // const headers: Record<string, string> = {};
+        // if (token) headers['Authorization'] = `Bearer ${token}`;
+          const res = await fetch('/api/banners');
           const data = await res.json();
           setBanners(
             data.map((b: any) => ({
@@ -180,7 +181,7 @@ export function MiniGamePage({ onBack, user, accessToken, onSignupClick, onLogin
 
       {/* 광고 모달 */}
       {/* {showAdModal && <GameAdModal onClose={() => setShowAdModal(false)} />} */}
-        {showAdModal && (
+        {showAdModal && popupBanner && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden relative">
             {/* X 버튼 - 15초 후 활성화 */}
@@ -203,7 +204,7 @@ export function MiniGamePage({ onBack, user, accessToken, onSignupClick, onLogin
 
             {/* 광고 이미지 */}
             <div className="relative h-64 bg-gradient-to-br from-blue-500 to-cyan-500">
-              <img
+              <ImageWithFallback
                 src={popupBanner?.imageUrl}
                 alt={popupBanner?.title}
                 className="w-full h-full object-cover"
@@ -245,7 +246,6 @@ export function MiniGamePage({ onBack, user, accessToken, onSignupClick, onLogin
           </div>
         </div>
       )}
-
     </div>
   );
 }

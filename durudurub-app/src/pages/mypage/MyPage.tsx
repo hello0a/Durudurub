@@ -44,6 +44,22 @@ export function MyPage({
   const [totalMyClub, setTotalMyClub] = useState<number>(0);
   const [totalFavorite, setTotalFavorite] = useState<number>(0);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  useEffect(() => {
+  const fetchUser = async () => {
+    const token = sessionStorage.getItem('accessToken');
+    const res = await fetch('/api/users/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    const data = await res.json();
+
+    if (data.profileImgUrl) {
+      setProfileImage(`http://localhost:8080${data.profileImgUrl}`);
+    }
+  };
+
+  fetchUser();
+}, []);
 
   // 성별 영어 -> 한글 변환 함수
   const convertGenderToKorean = (gender: string) => {
