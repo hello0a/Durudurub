@@ -6,6 +6,8 @@ interface User {
   name: string;
   isAdmin?: boolean;
   isPremium?: boolean;
+  premiumEndDate?: string | null;
+  subscription?: string;
 }
 
 interface AppContextType {
@@ -13,8 +15,8 @@ interface AppContextType {
   accessToken: string | null;
   profileImage: string | null;
   setUser: Dispatch<SetStateAction<User | null>>;
-  setAccessToken: Dispatch<SetStateAction<string | null>>;
-  
+  setAccessToken: (token: string | null) => void;
+  setProfileImage: (image: string | null) => void;
   handleLogin: (userData: User, token: string) => void;
   handleLogout: () => void;
   handleProfileImageUpdate: (newImage: string | null) => void;

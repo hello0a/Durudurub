@@ -74,8 +74,8 @@ export function PaymentSuccessPage({ onGoHome, onGoMyPage }: PaymentSuccessPageP
           setStatus('success');
           setMessage(
             isAlreadyConfirmed
-              ? '이미 승인된 결제입니다. 프리미엄 구독 상태를 확인해주세요.'
-              : '결제가 완료되었습니다. 프리미엄 구독이 활성화되었습니다.'
+            ? '결제가 완료되었습니다. 프리미엄 구독이 활성화되었습니다.'
+            : '이미 승인된 결제입니다. 프리미엄 구독 상태를 확인해주세요.'
           );
           return;
         } catch (error: any) {
