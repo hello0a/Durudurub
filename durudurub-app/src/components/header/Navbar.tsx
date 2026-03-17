@@ -611,7 +611,7 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
                   {isUserMenuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
                       {/* 관리자만 공지사항 메뉴 표시 */}
-                      {isAdmin && (
+                      {/* {isAdmin && ( */}
                         <button
                           onClick={() => handleUserMenuClick('notice')}
                           className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-[#00A651] transition-colors flex items-center gap-2"
@@ -619,7 +619,7 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
                           <Bell className="w-5 h-5" />
                           공지사항
                         </button>
-                      )}
+                      {/* )} */}
                       {/* 관리자가 아닌 경우에만 마이페이지와 내 모임 표시 */}
                       {!isAdmin && (
                         <>

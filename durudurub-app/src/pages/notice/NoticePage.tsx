@@ -20,63 +20,17 @@ interface NoticePageProps {
 }
 
 interface Notice {
-  id: number;
+  noticeNo: number;
   title: string;
-  date: string;
+  regDate: string;
   views: number;
   category: '공지' | '이벤트' | '업데이트' | '점검';
   content: string;
-  isImportant: boolean;
+  important: boolean;
 }
 
 export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginClick, onLogoClick, onMyPageClick, onMiniGameClick, onMyMeetingsClick, profileImage, onLogout, onNoticeWriteClick }: NoticePageProps) {
-  const [notices, setNotices] = useState<Notice[]>([
-    {
-      id: 1,
-      title: '두루두룹 서비스 정식 오픈 안내',
-      date: '2026-01-20',
-      views: 1245,
-      category: '공지',
-      content: '안녕하세요, 두루두룹입니다!\n\n드디어 소모임 커뮤니티 서비스 \'두루두룹\'이 정식으로 오픈되었습니다. 🎉\n\n두루두룹은 같은 관심사를 가진 사람들이 모여 다양한 활동을 함께 즐길 수 있는 플랫폼입니다. 운동, 문화/예술, 게임, 푸드 등 다양한 카테고리의 모임을 만들고 참여할 수 있습니다.\n\n주요 기능:\n• 다양한 카테고리의 모임 생성 및 참여\n• 모임별 게시글 작성 및 댓글 소통\n• 관심있는 모임 즐겨찾기\n• 리더의 승인을 통한 안전한 모임 운영\n\n많은 관심과 이용 부탁드립니다.\n감사합니다!',
-      isImportant: true,
-    },
-    {
-      id: 2,
-      title: '신규 회원 환영 이벤트 - 첫 모임 참여 시 포인트 지급!',
-      date: '2026-01-22',
-      views: 856,
-      category: '이벤트',
-      content: '🎁 신규 회원 환영 이벤트 안내\n\n두루두룹에 가입하신 모든 신규 회원분들께 특별한 혜택을 드립니다!\n\n이벤트 기간: 2026년 1월 22일 ~ 2월 28일\n\n혜택 내용:\n1️⃣ 회원가입 완료 시 500 포인트 지급\n2️⃣ 첫 모임 참여 승인 시 1,000 포인트 추가 지급\n3️⃣ 첫 게시글 작성 시 300 포인트 추가 지급\n\n※ 포인트는 향후 프리미엄 기능 이용 시 사용 가능합니다.\n\n여러분의 활발한 참여를 기다립니다! 💚',
-      isImportant: true,
-    },
-    {
-      id: 3,
-      title: '모임 게시글 사진 업로드 기능 추가 업데이트',
-      date: '2026-01-25',
-      views: 432,
-      category: '업데이트',
-      content: '📢 새로운 기능이 추가되었습니다!\n\n이번 업데이트에서 모임 게시글에 사진을 업로드할 수 있는 기능이 추가되었습니다.\n\n주요 업데이트 내용:\n✅ 게시글 작성 시 최대 10장의 사진 업로드 가능\n✅ 사진 미리보 및 삭제 기능\n✅ 게시글에 댓글 기능 추가\n✅ 댓글 실시간 알림 기능\n\n모임 활동 사진을 공유하고, 멤버들과 더욱 활발하게 소통해보세요!\n\n더 나은 서비스를 위해 항상 노력하겠습니다.\n감사합니다.',
-      isImportant: false,
-    },
-    {
-      id: 4,
-      title: '서버 정기 점검 안내 (1월 27일 새벽 2시~4시)',
-      date: '2026-01-26',
-      views: 678,
-      category: '점검',
-      content: '🔧 서버 정기 점검 안내\n\n안정적인 서비스 제공을 위해 정기 점검을 실시합니다.\n\n점검 일시: 2026년 1월 27일 (월) 02:00 ~ 04:00 (약 2시간)\n\n점검 내용:\n• 서버 안정화 작업\n• 데이터베이스 최적화\n• 보안 업데이트 적용\n\n점검 시간 동안 서비스 이용이 일시적으로 중단됩니다.\n양해 부탁드리며, 점검이 조기 완료될 경우 별도 공지 없이 서비스가 재개됩니다.\n\n이용에 불편을 드려 죄송합니다.\n감사합니다.',
-      isImportant: false,
-    },
-    {
-      id: 5,
-      title: '부적절한 게시글 및 모임 신고 기능 안내',
-      date: '2026-01-24',
-      views: 523,
-      category: '공지',
-      content: '📌 건전한 커뮤니티 문화를 위한 신고 기능 안내\n\n두루두룹은 모든 회원이 안전하고 즐겁게 이용할 수 있는 커뮤니티를 만들기 위해 노력하고 있습니다.\n\n신고 대상:\n• 욕설, 비방, 차별적 표현이 포함된 게시글\n• 허위 정보나 사기성 모임\n• 불법적이거나 부적절한 내용\n• 개인정보 무단 노출\n\n신고 방법:\n각 게시글 및 모임 상세 페이지의 우측 상단 [신고하기] 버튼을 클릭해주세요.\n\n신고 처리:\n접수된 신고는 24시간 내 검토되며, 운영 정책에 따라 조치됩니다.\n\n여러분의 적극적인 참여로 더 나은 커뮤니티를 만들어갑시다.\n감사합니다.',
-      isImportant: false,
-    },
-  ]);
+  const [notices, setNotices] = useState<Notice[]>([]);
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
@@ -96,32 +50,33 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
   const isAdmin = user?.isAdmin === true;
 
   // 공지사항 목록 가져오기 - 샘플 데이터를 사용하므로 주석 처리
-  // useEffect(() => {
-  //   fetchNotices();
-  // }, []);
+  useEffect(() => {
+    fetchNotices();
+  }, []);
 
   const fetchNotices = async () => {
     try {
+      const token = sessionStorage.getItem('accessToken')
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/notices`,
+        `/api/notice`,
         {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${publicAnonKey}`,
+            'Authorization': `Bearer ${token}`,
           },
         }
       );
 
       const data = await response.json();
-      if (data.success && data.notices && data.notices.length > 0) {
-        setNotices(data.notices);
-      }
-      // 데이터가 없으면 샘플 데이터를 그대로 유지
-    } catch (error) {
-      console.error('공지사항 목록 가져오기 실패:', error);
-      // 에러 발생 시에도 샘플 데이터 유지
-    } finally {
-      setLoading(false);
+
+      if (response.ok) {
+        console.log("NoticeList >>>> : ", data);
+      };
+
+      setNotices(data);
+
+    } catch {
+      console.log("List 불러오기 실패....");
     }
   };
 
@@ -140,22 +95,51 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
     }
   };
 
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      // 상세 상태였다면 → 목록으로 복귀
+      if (selectedNotice) {
+        setSelectedNotice(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [selectedNotice]);
+
   const handleNoticeClick = async (notice: Notice) => {
     setSelectedNotice(notice);
+
+    // ⭐ 히스토리 추가 (핵심)
+    window.history.pushState({ detail: true }, '', `/notice?detail=${notice.noticeNo}`);
     
     // 조회수 증가
     try {
-      await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/notices/${notice.id}/view`,
+      const token = sessionStorage.getItem('accessToken');
+      const response = await fetch(
+        `/api/notice/${notice.noticeNo}`,
         {
-          method: 'POST',
+          method: 'GET',
           headers: {
-            'Authorization': `Bearer ${publicAnonKey}`,
+            'Authorization': `Bearer ${token}`,
           },
         }
       );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log("DetailAndCount >>>> ", data);
+      }
+
+      setSelectedNotice(data);
+      fetchNotices();
+
     } catch (error) {
-      console.error('조회수 증가 실패:', error);
+      console.error('공지사항 상세 조회 실패:', error);
     }
   };
 
@@ -167,8 +151,8 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
     onNoticeWriteClick?.(notice);
   };
 
-  const handleDelete = (noticeId: number) => {
-    setNoticeToDelete(noticeId);
+  const handleDelete = (noticeNo: number) => {
+    setNoticeToDelete(noticeNo);
     setShowDeleteNoticeModal(true);
   };
 
@@ -176,21 +160,22 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
     if (!noticeToDelete) return;
 
     try {
+      const token = sessionStorage.getItem('accessToken');
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/notices/${noticeToDelete}`,
+        `/api/admin/notice/${noticeToDelete}`,
         {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
+            'Authorization': `Bearer ${token}`,
           },
         }
       );
 
       const data = await response.json();
-      if (data.success) {
+      if (response.ok) {
         toast.success('공지사항이 삭제되었습니다.');
         fetchNotices();
-        if (selectedNotice?.id === noticeToDelete) {
+        if (selectedNotice?.noticeNo === noticeToDelete) {
           setSelectedNotice(null);
         }
       } else {
@@ -220,7 +205,7 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
 
     try {
       const url = editingNotice
-        ? `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/notices/${editingNotice.id}`
+        ? `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/notices/${editingNotice.noticeNo}`
         : `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/notices`;
 
       console.log('공지사항 작성/수정 요청:', {
@@ -250,7 +235,7 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
         toast.success(editingNotice ? '공지사항이 수정되었습니다.' : '공지사항이 작성되었습니다.');
         setShowModal(false);
         fetchNotices();
-        if (editingNotice && selectedNotice?.id === editingNotice.id) {
+        if (editingNotice && selectedNotice?.noticeNo === editingNotice.noticeNo) {
           setSelectedNotice(null);
         }
       } else {
@@ -408,7 +393,7 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
                   수정
                 </button>
                 <button
-                  onClick={() => handleDelete(selectedNotice.id)}
+                  onClick={() => handleDelete(selectedNotice.noticeNo)}
                   className="px-4 py-2 text-sm border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors"
                 >
                   <Trash2 className="w-4 h-4 inline mr-1" />
@@ -427,7 +412,7 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${getCategoryColor(selectedNotice.category)}`}>
                 {selectedNotice.category}
               </span>
-              {selectedNotice.isImportant && (
+              {selectedNotice.important && (
                 <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700">
                   중요
                 </span>
@@ -443,7 +428,7 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
             <div className="flex items-center gap-6 text-sm text-gray-500 pb-6 mb-6 border-b">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                <span>{selectedNotice.date}</span>
+                <span>{selectedNotice.regDate}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Eye className="w-4 h-4" />
@@ -555,9 +540,9 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             {/* 중요 공지사항 */}
             <div className="border-b bg-red-50">
-              {notices.filter(notice => notice.isImportant).map((notice, index) => (
+              {notices.filter(notice => notice.important).map((notice, index) => (
                 <div
-                  key={notice.id}
+                  key={notice.noticeNo}
                   className={`p-6 cursor-pointer hover:bg-red-100 transition-colors ${
                     index !== 0 ? 'border-t border-red-100' : ''
                   }`}
@@ -580,7 +565,7 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
                         {notice.title}
                       </h3>
                       <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <span>{notice.date}</span>
+                        <span>{notice.regDate}</span>
                         <span className="flex items-center gap-1">
                           <Eye className="w-4 h-4" />
                           {notice.views?.toLocaleString() || 0}
@@ -594,9 +579,9 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
 
             {/* 일반 공지사항 */}
             <div>
-              {notices.filter(notice => !notice.isImportant).map((notice, index) => (
+              {notices.filter(notice => !notice.important).map((notice, index) => (
                 <div
-                  key={notice.id}
+                  key={notice.noticeNo}
                   className={`p-6 cursor-pointer hover:bg-gray-50 transition-colors ${
                     index !== 0 ? 'border-t' : ''
                   }`}
@@ -613,7 +598,7 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
                         {notice.title}
                       </h3>
                       <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <span>{notice.date}</span>
+                        <span>{notice.regDate}</span>
                         <span className="flex items-center gap-1">
                           <Eye className="w-4 h-4" />
                           {notice.views?.toLocaleString() || 0}

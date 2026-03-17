@@ -77,7 +77,8 @@ export function MyPage({
     address: user?.address || '',
     age: user?.age || '',
     gender: convertGenderToKorean(user?.gender || ''),
-    profileImage:  user?.profileImage || ''
+    profileImage:  user?.profileImage || '',
+    createdAt: user?.createdAt || ''
   });
 
   useEffect(() => {
@@ -98,6 +99,9 @@ export function MyPage({
       setUserInfo(userData?.userInfo || {});
       setTotalMyClub(userData?.totalMyClub || 0);
       setTotalFavorite(userData?.totalFavorite || 0);
+
+      console.log("createdAt raw >>>>> ", editedUser.createdAt);
+      console.log("date parse >>>>> ", new Date(editedUser.createdAt));
     } catch (error) {
       console.error('사용자 조회 실패 : ', error);
     } finally {
@@ -106,10 +110,14 @@ export function MyPage({
   }
 
   useEffect(() => {
-    setEditedUser({...editedUser, ...userInfo});
-    if (userInfo.profileImgUrl) {
-      setProfileImage(userInfo.profileImgUrl);
-    }
+    setEditedUser({
+      username: userInfo.username || '사용자',
+      address: userInfo.address || '',
+      age: userInfo.age || '',
+      gender: convertGenderToKorean(userInfo.gender || ''),
+      profileImage: userInfo.profileImage || '',
+      createdAt: userInfo.createdAt || ''
+    });
   }, [userInfo]);
 
   const handleSave = async () => {
@@ -174,6 +182,30 @@ export function MyPage({
       reader.readAsDataURL(file);
     }
   };
+
+  const handleDelete = async () => {
+    try {
+      const token = sessionStorage.getItem('accessToken')
+      
+      const res = await fetch (`/api/users/mypage/delete`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        console.log("userDelete Error : ", res)
+      }
+
+      sessionStorage.removeItem('accessToken');
+      onLogout?.();
+      onLogoClick?.();
+
+    } catch (error) {
+      console.log("회원 탈퇴 Error..... ", error);
+    }
+  }
 
   const resolvedPremiumEndDate = premiumEndDate || user?.premiumEndDate || null;
 
@@ -469,7 +501,13 @@ export function MyPage({
                     가입일
                   </label>
                   <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
-                    2025년 1월 20일
+                    {editedUser.createdAt
+                      ? new Date(editedUser.createdAt).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })
+                      : '미확인'}
                   </div>
                 </div>
               </div>
@@ -524,7 +562,10 @@ export function MyPage({
             <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
               <h3 className="text-lg font-bold text-gray-900 mb-4">계정 관리</h3>
               <button
-                onClick={() => setShowDeleteModal(true)}
+                onClick={() => {
+                  handleDelete();
+                  setShowDeleteModal(false);
+                }}
                 className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 transition-colors text-red-600"
               >
                 회원 탈퇴
@@ -554,13 +595,8 @@ export function MyPage({
                 </button>
                 <button
                   onClick={() => {
-                    // TODO: 실제 회원 탈퇴 처리
-                    console.log('회원 탈퇴 처리');
+                    handleDelete();
                     setShowDeleteModal(false);
-                    // 로그아웃 처리
-                    onLogout?.();
-                    // 메인 화면으로 이동
-                    onLogoClick?.();
                   }}
                   className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
                 >

@@ -26,7 +26,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
-
+  
   // 컴포넌트 마운트 시 sessionStorage에서 로그인 정보 확인
   useEffect(() => {
     const storedToken = sessionStorage.getItem('accessToken');

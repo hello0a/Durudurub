@@ -1,7 +1,6 @@
 package com.aloha.durudurub.controller;
 
 import com.aloha.durudurub.dto.Club;
-import com.aloha.durudurub.dto.ClubMember;
 import com.aloha.durudurub.dto.HostClubresponse;
 import com.aloha.durudurub.dto.Subscription;
 import com.aloha.durudurub.dto.User;
@@ -18,7 +17,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -184,7 +182,7 @@ public class MypageApiController {
     }
 
     // 회원 탈퇴 모달
-    @DeleteMapping("/modal")
+    @DeleteMapping("/delete")
     @ResponseBody
     public ResponseEntity<Void> deleteUser(
         Principal principal,

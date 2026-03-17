@@ -8,7 +8,7 @@ export function NoticePageWrapper() {
 
   return (
     <NoticePage
-      onBack={() => navigate('/')}
+      onBack={() => navigate('/notice', { replace: true })}
       user={user}
       accessToken={accessToken}
       onSignupClick={() => navigate('/signup')}

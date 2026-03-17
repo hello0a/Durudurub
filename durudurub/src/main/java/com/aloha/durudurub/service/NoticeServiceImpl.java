@@ -32,6 +32,12 @@ public class NoticeServiceImpl implements NoticeService{
         // 관리자 번호 1번
         notice.setWriterNo(loginUserNo);
         noticeMapper.noticeInsert(notice);
+
+        // if (notice.getCategory() != null) {
+        //     String categoryStr = String.join(",", notice.getCategory());
+        //     notice.setCategoryString(categoryStr);
+        // }
+
         return notice.getNoticeNo();
     }
     // 수정

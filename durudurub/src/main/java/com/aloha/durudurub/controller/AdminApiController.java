@@ -33,7 +33,7 @@ public class AdminApiController {
     private final CategoryService categoryService;
     
     // index (공통)
-    @GetMapping("/")
+    @GetMapping("")
     public String admin() {
         return "admin/index";
     }

@@ -13,7 +13,7 @@
             DATE(created_at) AS regDate,
             view_counts AS views,
             CASE WHEN is_important = 'Y' THEN TRUE ELSE FALSE END AS important,
-            category AS categoryString
+            category AS category
         FROM notices
         ORDER BY is_important DESC, created_at DESC
     </select>
@@ -27,21 +27,21 @@
             DATE(created_at) AS regDate,
             view_counts AS views,
             CASE WHEN is_important = 'Y' THEN TRUE ELSE FALSE END AS important,
-            category AS categoryString
+            category AS category
         FROM notices
         WHERE no = #{noticeNo}
     </select>
     <!-- 공지사항 등록 -->
     <insert id="noticeInsert" useGeneratedKeys="true" keyProperty="noticeNo">
         INSERT INTO notices ( category, title, content, is_important, writer_no)
-        VALUES ( #{categoryString}, #{title}, #{content}, CASE WHEN #{important} THEN 'Y' ELSE 'N' END, #{writerNo} )
+        VALUES ( #{category}, #{title}, #{content}, CASE WHEN #{important} THEN 'Y' ELSE 'N' END, #{writerNo} )
     </insert>
     <!-- 공지사항 수정 -->
     <update id="noticeUpdate">
         UPDATE notices
             SET title = #{title}
                 , content = #{content}
-                , is_important = #{important}
+                , is_important = CASE WHEN #{important} THEN 'Y' ELSE 'N' END
         WHERE no = #{noticeNo}
     </update>
     <!-- 공지사항 삭제 -->

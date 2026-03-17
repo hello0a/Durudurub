@@ -2,6 +2,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 import { Navbar } from '@/components/header/Navbar';
+import { toast } from 'sonner';
 
 interface NoticeWritePageProps {
   onBack: () => void;
@@ -19,13 +20,13 @@ interface NoticeWritePageProps {
 }
 
 interface Notice {
-  id: number;
+  noticeNo: number;
   title: string;
-  date: string;
+  regDate: string;
   views: number;
   category: '공지' | '이벤트' | '업데이트' | '점검';
   content: string;
-  isImportant: boolean;
+  important: boolean;
 }
 
 export function NoticeWritePage({ 
@@ -46,7 +47,7 @@ export function NoticeWritePage({
     title: '',
     content: '',
     category: '공지' as Notice['category'],
-    isImportant: false,
+    important: false,
   });
 
   useEffect(() => {
@@ -55,28 +56,37 @@ export function NoticeWritePage({
         title: editingNotice.title,
         content: editingNotice.content,
         category: editingNotice.category,
-        isImportant: editingNotice.isImportant,
+        important: editingNotice.important,
       });
     }
   }, [editingNotice]);
 
+  const payload = {
+    title: formData.title,
+    content: formData.content,
+    category: formData.category, // 배열
+    important: formData.important,  // 이름 변경
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const token = sessionStorage.getItem('accessToken');
 
     if (!formData.title.trim() || !formData.content.trim()) {
       alert('제목과 내용을 입력해주세요.');
       return;
     }
 
-    if (!accessToken) {
+    if (!token) {
       alert('로그인이 필요합니다.');
       return;
     }
 
     try {
       const url = editingNotice
-        ? `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/notices/${editingNotice.id}`
-        : `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/notices`;
+        ? `/api/admin/notice/${editingNotice.noticeNo}/update`
+        : `/api/admin/notice/create`;
 
       console.log('공지사항 작성/수정 요청:', {
         url,
@@ -89,10 +99,14 @@ export function NoticeWritePage({
         method: editingNotice ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
+
+      console.log("category Error >>>> :", formData.category);
+
+      console.log("json Error >>>> :", JSON.stringify(payload));
 
       const data = await response.json();
       
@@ -101,8 +115,8 @@ export function NoticeWritePage({
         data
       });
 
-      if (data.success) {
-        alert(editingNotice ? '공지사항이 수정되었습니다.' : '공지사항이 작성되었습니다.');
+      if (response.ok) {
+        toast.success(editingNotice ? '공지사항이 수정되었습니다.' : '공지사항이 작성되었습니다.');
         onBack();
       } else {
         console.error('공지사항 작성/수정 실패:', data);
@@ -116,12 +130,12 @@ export function NoticeWritePage({
           // 페이지 새로고침하여 로그인 상태 초기화
           window.location.reload();
         } else {
-          alert(data.error || data.message || '공지사항 작성에 실패했습니다.');
+          toast.error(data.error || data.message || '공지사항 작성에 실패했습니다.');
         }
       }
     } catch (error) {
       console.error('공지사항 저장 실패:', error);
-      alert('공지사항 저장 중 오류가 발생했습니다.');
+      toast.error('공지사항 저장 중 오류가 발생했습니다.');
     }
   };
 
@@ -204,8 +218,8 @@ export function NoticeWritePage({
               <label className="flex items-center cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={formData.isImportant}
-                  onChange={(e) => setFormData({ ...formData, isImportant: e.target.checked })}
+                  checked={formData.important}
+                  onChange={(e) => setFormData({ ...formData, important: e.target.checked })}
                   className="w-5 h-5 text-[#00A651] border-gray-300 rounded focus:ring-[#00A651] cursor-pointer"
                 />
                 <span className="ml-3 text-sm font-medium text-gray-700">

@@ -116,7 +116,7 @@ const ItemTypes = {
 };
 
 interface DraggableSubCategoryProps {
-  sub: { no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; iconUrl?: string };
+  sub: { no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; icon?: string };
   index: number;
   parentId: number;
   moveSubCategory: (parentId: number, dragIndex: number, hoverIndex: number) => void;
@@ -252,7 +252,7 @@ interface DraggableSubCategoryProps {
 }
 
 interface DraggableParentCategoryProps {
-  parent: { no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; iconUrl?: string };
+  parent: { no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; icon?: string };
   index: number;
   moveParentCategory: (dragIndex: number, hoverIndex: number) => void;
   onDelete: () => void;
@@ -262,6 +262,8 @@ interface DraggableParentCategoryProps {
 
 function DraggableParentCategory({ parent, index, moveParentCategory, onDelete, onEdit, children }: DraggableParentCategoryProps) {
   const ref = useRef<HTMLDivElement>(null);
+
+  console.log('parent >>>> ', parent)
   
   const [{ isDragging }, drag] = useDrag({
     type: ItemTypes.PARENT_CATEGORY,
@@ -352,7 +354,7 @@ function DraggableParentCategory({ parent, index, moveParentCategory, onDelete, 
             border: '3px solid #00A651',
             flexShrink: 0,
             boxShadow: '0 4px 6px -1px rgba(0, 166, 81, 0.2)',
-            background: parent.iconUrl ? 'transparent' : 'linear-gradient(135deg, #00A651 0%, #059669 100%)',
+            background: parent.icon ? 'transparent' : 'linear-gradient(135deg, #00A651 0%, #059669 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -360,14 +362,14 @@ function DraggableParentCategory({ parent, index, moveParentCategory, onDelete, 
             fontSize: '1.25rem',
             fontWeight: '700',
           }}>
-            {parent.iconUrl ? (
+            {parent.icon ? (
               <img 
-                src={parent.iconUrl} 
+                src={parent.icon} 
                 alt={parent.name}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             ) : (
-              parent.name.substring(0, 2)
+              parent.name?.substring(0, 2) || '??'
             )}
           </div>
           
@@ -550,7 +552,7 @@ export function AdminPage({
   const [showBannerErrorModal, setShowBannerErrorModal] = useState(false);
   const [bannerErrorMessage, setBannerErrorMessage] = useState('');
 
-  const [categories, setCategories] = useState<{ no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; iconUrl?: string }[]>([]);
+  const [categories, setCategories] = useState<{ no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; icon?: string }[]>([]);
   useEffect(() => {
     loadCategories();
   }, [])
@@ -572,10 +574,11 @@ export function AdminPage({
   }
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<{ no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; iconUrl?: string } | null>(null);
-  const [categoryFormData, setCategoryFormData] = useState({ name: '', description: '', parentId: null as number | null, iconUrl: '' });
+  const [selectedCategory, setSelectedCategory] = useState<{ no: number; name: string; description: string; createdAt: string; communityCount: number; parentId?: number | null; icon?: string } | null>(null);
+  const [categoryFormData, setCategoryFormData] = useState({ name: '', description: '', parentId: null as number | null, icon: '' });
   const [showCategoryDeleteModal, setShowCategoryDeleteModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
+  const [iconFile, setIconFile] = useState<File | null>(null);
 
   // 소분류 순서 변경 함수
   const moveSubCategory = (parentId: number, dragIndex: number, hoverIndex: number) => {
@@ -942,6 +945,96 @@ export function AdminPage({
     }  
   };
 
+  const savedCategory = async () => {
+  if (!categoryFormData.name.trim()) return;
+
+  const token = sessionStorage.getItem('accessToken');
+
+  try {
+    let url = '';
+    let method = '';
+    let body: BodyInit;
+    let headers: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    if (categoryFormData.parentId && !selectedCategory) {
+      url = `/api/admin/categories/${categoryFormData.parentId}/subs`;
+      method = 'POST';
+
+      headers['Content-Type'] = 'application/json';
+
+      body = JSON.stringify({
+        name: categoryFormData.name,
+        description: categoryFormData.description,
+      });
+    }
+    else if (selectedCategory && !selectedCategory.parentId) {
+      url = `/api/admin/categories/${selectedCategory.no}/update`;
+      method = 'PUT';
+
+      const formData = new FormData();
+      formData.append("name", categoryFormData.name);
+      formData.append("description", categoryFormData.description);
+
+      if (iconFile) {
+        formData.append("iconFile", iconFile);
+      }
+
+      body = formData;
+    
+    } else {
+      url = `/api/admin/categories/create`;
+      method = 'POST';
+
+      const formData = new FormData();
+      formData.append("name", categoryFormData.name);
+      formData.append("description", categoryFormData.description);
+
+      if (iconFile) {
+        formData.append("iconFile", iconFile);
+      }
+
+      body = formData;
+    }
+
+    const response = await fetch(url, {
+      method,
+      headers,
+      body,
+    });
+
+    if (!response.ok) {
+      console.error('savedCategory Fail:', await response.text());
+      return;
+    }
+
+     // ❗ 이거 중요
+    await loadCategories();  // ← 무조건 재조회
+    
+    const data = await response.json();
+
+    setCategories(prev => {
+      if (selectedCategory) {
+        return prev.map(c =>
+          c.no === selectedCategory.no ? data : c
+        );
+      }
+      return [...prev, data];
+    });
+
+    setToastMessage(
+      selectedCategory ? '카테고리 수정 완료' : '카테고리 추가 완료'
+    );
+
+  } catch (error) {
+    console.error("카테고리 추가/수정 실패......", error);
+  }
+
+  setShowCategoryModal(false);
+};
+
+
   // 관리자가 아닌 경우
   if (!isAdmin) {
     return (
@@ -973,13 +1066,6 @@ export function AdminPage({
       </div>
     );
   }
-
-  // 대시보드 통계 (목업 데이터)
-  // const stats = {
-  //   totalUsers: 1247,
-  //   totalCommunities: 89,
-  //   totalReports: 23,
-  // };
 
   const filteredUsers = users.filter(
     (u) =>
@@ -1675,7 +1761,7 @@ export function AdminPage({
           {/* 카테고리 관리 탭 */}
           {activeTab === 'categories' && (() => {
             const parentCategories = categories.filter(c => !c.parentId);
-            const getSubCategories = (parentId: number) => categories.filter(c => c.no === parentId);
+            const getSubCategories = (parentId: number) => categories.filter(c => c.parentId  === parentId);
             
             return (
               <div className={styles.tabContent}>
@@ -1687,7 +1773,7 @@ export function AdminPage({
                     style={{ backgroundColor: '#00A651', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}
                     onClick={() => {
                       setSelectedCategory(null);
-                      setCategoryFormData({ name: '', description: '', parentId: null, iconUrl: '' });
+                      setCategoryFormData({ name: '', description: '', parentId: null, icon: '' });
                       setShowCategoryModal(true);
                     }}
                   >
@@ -1709,7 +1795,7 @@ export function AdminPage({
                         moveParentCategory={moveParentCategory}
                         onEdit={() => {
                           setSelectedCategory(parent);
-                          setCategoryFormData({ name: parent.name, description: parent.description, parentId: parent.no || null, iconUrl: parent.iconUrl || '' });
+                          setCategoryFormData({ name: parent.name, description: parent.description, parentId: parent.no || null, icon: parent.icon || '' });
                           setShowCategoryModal(true);
                         }}
                         onDelete={() => {
@@ -1733,7 +1819,7 @@ export function AdminPage({
                               moveSubCategory={moveSubCategory}
                               onEdit={() => {
                                 setSelectedCategory(sub);
-                                setCategoryFormData({ name: sub.name, description: sub.description, parentId: sub.no || null, iconUrl: sub.iconUrl || '' });
+                                setCategoryFormData({ name: sub.name, description: sub.description, parentId: sub.no || null, icon: sub.icon || '' });
                                 setShowCategoryModal(true);
                               }}
                               onDelete={() => {
@@ -1758,7 +1844,7 @@ export function AdminPage({
                             }}
                             onClick={() => {
                               setSelectedCategory(null);
-                              setCategoryFormData({ name: '', description: '', parentId: parent.no, iconUrl: '' });
+                              setCategoryFormData({ name: '', description: '', parentId: parent.no, icon: '' });
                               setShowCategoryModal(true);
                             }}
                             onMouseEnter={(e) => {
@@ -2514,7 +2600,7 @@ export function AdminPage({
                     }}
                   >
                     <img 
-                      src={categoryFormData.iconUrl || 'https://images.unsplash.com/photo-1762503203730-ca33982518af?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGNvbG9yZnVsJTIwZ3JhZGllbnQlMjBwYXR0ZXJufGVufDF8fHx8MTc3MDEwODQ2MHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral'} 
+                      src={categoryFormData.icon || 'https://images.unsplash.com/photo-1762503203730-ca33982518af?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGNvbG9yZnVsJTIwZ3JhZGllbnQlMjBwYXR0ZXJufGVufDF8fHx8MTc3MDEwODQ2MHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral'} 
                       alt="카테고리 이미지" 
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
@@ -2543,7 +2629,7 @@ export function AdminPage({
                       if (file) {
                         const reader = new FileReader();
                         reader.onloadend = () => {
-                          setCategoryFormData({ ...categoryFormData, iconUrl: reader.result as string });
+                          setCategoryFormData({ ...categoryFormData, icon: reader.result as string });
                         };
                         reader.readAsDataURL(file);
                       }
@@ -2622,39 +2708,7 @@ export function AdminPage({
               </button>
               <button
                 className={styles.modalButtonPrimary}
-                onClick={() => {
-                  if (!categoryFormData.name.trim()) {
-                    alert('카테고리명을 입력해주세요.');
-                    return;
-                  }
-                  
-                  if (selectedCategory) {
-                    // 수정
-                    setCategories(categories.map(c =>
-                      c.no === selectedCategory.no
-                        ? { ...c, name: categoryFormData.name, description: categoryFormData.description, parentId: categoryFormData.parentId, iconUrl: categoryFormData.iconUrl }
-                        : c
-                    ));
-                    setToastMessage('카테고리가 수정되었습니다');
-                  } else {
-                    // 추가
-                    const newCategory = {
-                      no: categoryFormData.parentId,
-                      name: categoryFormData.name,
-                      description: categoryFormData.description,
-                      createdAt: new Date().toISOString(),
-                      communityCount: 0,
-                      parentId: categoryFormData.parentId,
-                      iconUrl: categoryFormData.iconUrl,
-                    };
-                    setCategories([...categories, newCategory]);
-                    setToastMessage('카테고리가 추가되었습니다');
-                  }
-                  
-                  setShowCategoryModal(false);
-                  setShowToast(true);
-                  setTimeout(() => setShowToast(false), 2000);
-                }}
+                onClick={savedCategory}
                 style={{ backgroundColor: '#00A651' }}
               >
                 {selectedCategory ? '수정' : '추가'}

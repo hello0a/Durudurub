@@ -17,8 +17,8 @@ public class Notice {
     private LocalDate regDate;      // 등록일
     private int views;              // 조회수
     private boolean important;      // 중요 공지 여부 - 변수명 수정!
-    private List<String> category;      // 카테고리 태그 (공지, 이벤트, 업데이트, 점검) - 변수명 수정!
-    private String categoryString;      // 카테고리 태그 (공지, 이벤트, 업데이트, 점검) - 변수명 수정!
+    // private List<String> category;      // 카테고리 태그 (공지, 이벤트, 업데이트, 점검) - 변수명 수정!
+    private String category;      // 카테고리 태그 (공지, 이벤트, 업데이트, 점검) - 변수명 수정!
     private String writerName;      // 작성자명
     
 }

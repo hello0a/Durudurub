@@ -11,6 +11,8 @@ import { MyPageWrapper } from "./pages/mypage/MyPageWrapper";
 import { MyMeetingsWrapper } from "./pages/mypage/MyMeetingsWrapper";
 import { MiniGamePageWrapper, AdminPageWrapper, FavoritesPageWrapper } from './pages/other/OtherPagesWrapper';
 import OAuthSuccess from './pages/login/OAuthSuccess';
+import { NoticePageWrapper } from './pages/notice/NoticePageWrapper';
+import { NoticeWritePageWrapper } from './pages/notice/NoticeWritePageWrapper';
 
 function AppRoutes() {
   const navigate = useNavigate();
@@ -69,6 +71,16 @@ function AppRoutes() {
         path="/oauth-success"
         element={ <OAuthSuccess />}
       />
+
+      <Route 
+        path="/notice"
+        element={ <NoticePageWrapper />}
+      />
+      <Route 
+        path="/notice/write"
+        element={ <NoticeWritePageWrapper />}
+      />
+
     </Routes>
   );
 }

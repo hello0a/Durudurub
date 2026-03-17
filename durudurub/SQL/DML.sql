@@ -295,5 +295,5 @@ INSERT INTO `user_bans`
 VALUES
 (1, '욕설 및 비방 신고 누적', 4, 'TEMPORARY', DATE_ADD(NOW(), INTERVAL 7 DAY), 'Y'),
 (2, '광고 및 스팸 행위 반복', 5, 'TEMPORARY', DATE_ADD(NOW(), INTERVAL 7 DAY), 'Y'),
-(3, '불법 콘텐츠 게시', 7, 'PERMANENT', NULL, 'Y');
+(3, '불법 콘텐츠 게시', 7, 'PERMANENT', DATE_ADD(NOW(), INTERVAL 7 DAY), 'Y');
 
