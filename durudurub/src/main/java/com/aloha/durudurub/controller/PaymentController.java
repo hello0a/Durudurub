@@ -5,6 +5,10 @@ import java.util.Map;
 import java.security.Principal;
 import java.util.Date;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -38,6 +42,7 @@ public class PaymentController {
 	private final PaymentService paymentService;
 	private final SubscriptionService subscriptionService;
 	private final ObjectMapper objectMapper = new ObjectMapper();
+	private final ConcurrentMap<String, ReentrantLock> orderLocks = new ConcurrentHashMap<>();
 
 	@Value("${toss.payments.client-key:}")
 	private String tossClientKey;
@@ -130,38 +135,128 @@ public class PaymentController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
 		}
 
-		Payment payment = paymentService.selectByOrderId(orderId);
-		if (payment == null) {
-			Map<String, Object> error = new HashMap<>();
-			error.put("code", "ORDER_NOT_FOUND");
-			error.put("message", "order not found");
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-		}
-
-		if (payment.getAmount() != amountValue) {
-			Map<String, Object> error = new HashMap<>();
-			error.put("code", "AMOUNT_MISMATCH");
-			error.put("message", "amount mismatch");
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-		}
-
-		if ("DONE".equalsIgnoreCase(payment.getStatus())) {
-			Subscription subscription = subscriptionService.selectByUserNo(payment.getUserNo());
-			boolean isSubscriptionActive = subscription != null
-				&& "ACTIVE".equalsIgnoreCase(subscription.getStatus())
-				&& subscription.getEndDate() != null
-				&& subscription.getEndDate().after(new Date());
-
-			if (!isSubscriptionActive) {
-				int periodMonths = resolvePeriodByAmount(amountValue);
-				if (periodMonths <= 0) {
-					Map<String, Object> error = new HashMap<>();
-					error.put("code", "INVALID_PERIOD");
-					error.put("message", "unsupported amount");
-					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-				}
-				subscriptionService.activateSubscription(payment.getUserNo(), periodMonths);
+		ReentrantLock orderLock = orderLocks.computeIfAbsent(orderId, key -> new ReentrantLock());
+		boolean locked = false;
+		try {
+			locked = orderLock.tryLock(5, TimeUnit.SECONDS);
+			if (!locked) {
+				Map<String, Object> error = new HashMap<>();
+				error.put("code", "ALREADY_PROCESSING_REQUEST");
+				error.put("message", "이미 처리중인 요청입니다.");
+				return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
 			}
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			Map<String, Object> error = new HashMap<>();
+			error.put("code", "REQUEST_INTERRUPTED");
+			error.put("message", "결제 승인 처리 중 요청이 중단되었습니다.");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+		}
+
+		try {
+			Payment payment = paymentService.selectByOrderId(orderId);
+			if (payment == null) {
+				Map<String, Object> error = new HashMap<>();
+				error.put("code", "ORDER_NOT_FOUND");
+				error.put("message", "order not found");
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+			}
+
+			if (payment.getAmount() != amountValue) {
+				Map<String, Object> error = new HashMap<>();
+				error.put("code", "AMOUNT_MISMATCH");
+				error.put("message", "amount mismatch");
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+			}
+
+			if ("DONE".equalsIgnoreCase(payment.getStatus())) {
+				Subscription subscription = subscriptionService.selectByUserNo(payment.getUserNo());
+				boolean isSubscriptionActive = subscription != null
+					&& "ACTIVE".equalsIgnoreCase(subscription.getStatus())
+					&& subscription.getEndDate() != null
+					&& subscription.getEndDate().after(new Date());
+
+				if (!isSubscriptionActive) {
+					int periodMonths = resolvePeriodByAmount(amountValue);
+					if (periodMonths <= 0) {
+						Map<String, Object> error = new HashMap<>();
+						error.put("code", "INVALID_PERIOD");
+						error.put("message", "unsupported amount");
+						return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+					}
+					subscriptionService.activateSubscription(payment.getUserNo(), periodMonths);
+				}
+
+				Subscription refreshedSubscription = subscriptionService.selectByUserNo(payment.getUserNo());
+				boolean isPremium = refreshedSubscription != null
+					&& "ACTIVE".equalsIgnoreCase(refreshedSubscription.getStatus())
+					&& refreshedSubscription.getEndDate() != null
+					&& refreshedSubscription.getEndDate().after(new Date());
+
+				Map<String, Object> response = new HashMap<>();
+				response.put("status", payment.getStatus());
+				response.put("paymentKey", payment.getPaymentKey());
+				response.put("orderId", orderId);
+				response.put("amount", amountValue);
+				response.put("alreadyConfirmed", true);
+				response.put("isPremium", isPremium);
+				response.put("endDate", refreshedSubscription != null && refreshedSubscription.getEndDate() != null
+					? refreshedSubscription.getEndDate().toInstant().toString()
+					: null);
+				return ResponseEntity.ok(response);
+			}
+
+			log.info("confirmPayment payload: paymentKey={}, orderId={}, amount={}", paymentKey, orderId, amount);
+
+			Map<String, Object> tossResponse;
+			try {
+				tossResponse = paymentService.confirmTossPayment(paymentKey, orderId, amountValue);
+			} catch (HttpStatusCodeException e) {
+				log.error("Toss 승인 실패 - status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+
+				String upstreamCode = "TOSS_CONFIRM_FAILED";
+				String upstreamMessage = e.getResponseBodyAsString();
+
+				try {
+					JsonNode node = objectMapper.readTree(e.getResponseBodyAsString());
+					if (node.hasNonNull("code")) {
+						upstreamCode = node.get("code").asText();
+					}
+					if (node.hasNonNull("message")) {
+						upstreamMessage = node.get("message").asText();
+					}
+				} catch (Exception parseException) {
+					log.warn("Toss 오류 응답 JSON 파싱 실패: {}", parseException.getMessage());
+				}
+
+				Map<String, Object> error = new HashMap<>();
+				error.put("code", upstreamCode);
+				error.put("message", upstreamMessage);
+				return ResponseEntity.status(e.getStatusCode()).body(error);
+			} catch (IllegalStateException e) {
+				log.error("Toss 승인 설정/처리 오류 - orderId={}", orderId, e);
+				Map<String, Object> error = new HashMap<>();
+				error.put("code", "TOSS_CONFIRM_CONFIGURATION_ERROR");
+				error.put("message", e.getMessage());
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+			} catch (Exception e) {
+				log.error("Toss 승인 호출 중 오류 - orderId={}", orderId, e);
+				Map<String, Object> error = new HashMap<>();
+				error.put("code", "TOSS_CONFIRM_FAILED");
+				error.put("message", e.getMessage());
+				return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
+			}
+
+			paymentService.markApproved(orderId, paymentKey);
+
+			int periodMonths = resolvePeriodByAmount(amountValue);
+			if (periodMonths <= 0) {
+				Map<String, Object> error = new HashMap<>();
+				error.put("code", "INVALID_PERIOD");
+				error.put("message", "unsupported amount");
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+			}
+			subscriptionService.activateSubscription(payment.getUserNo(), periodMonths);
 
 			Subscription refreshedSubscription = subscriptionService.selectByUserNo(payment.getUserNo());
 			boolean isPremium = refreshedSubscription != null
@@ -170,86 +265,23 @@ public class PaymentController {
 				&& refreshedSubscription.getEndDate().after(new Date());
 
 			Map<String, Object> response = new HashMap<>();
-			response.put("status", payment.getStatus());
-			response.put("paymentKey", payment.getPaymentKey());
-			response.put("orderId", orderId);
-			response.put("amount", amountValue);
-			response.put("alreadyConfirmed", true);
+			response.put("status", tossResponse.getOrDefault("status", "DONE"));
+			response.put("paymentKey", tossResponse.getOrDefault("paymentKey", paymentKey));
+			response.put("orderId", tossResponse.getOrDefault("orderId", orderId));
+			response.put("amount", tossResponse.getOrDefault("totalAmount", amountValue));
 			response.put("isPremium", isPremium);
 			response.put("endDate", refreshedSubscription != null && refreshedSubscription.getEndDate() != null
 				? refreshedSubscription.getEndDate().toInstant().toString()
 				: null);
 			return ResponseEntity.ok(response);
-		}
-
-		log.info("confirmPayment payload: paymentKey={}, orderId={}, amount={}", paymentKey, orderId, amount);
-
-		Map<String, Object> tossResponse;
-		try {
-			tossResponse = paymentService.confirmTossPayment(paymentKey, orderId, amountValue);
-		} catch (HttpStatusCodeException e) {
-			log.error("Toss 승인 실패 - status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
-
-			String upstreamCode = "TOSS_CONFIRM_FAILED";
-			String upstreamMessage = e.getResponseBodyAsString();
-
-			try {
-				JsonNode node = objectMapper.readTree(e.getResponseBodyAsString());
-				if (node.hasNonNull("code")) {
-					upstreamCode = node.get("code").asText();
+		} finally {
+			if (locked) {
+				orderLock.unlock();
+				if (!orderLock.hasQueuedThreads()) {
+					orderLocks.remove(orderId, orderLock);
 				}
-				if (node.hasNonNull("message")) {
-					upstreamMessage = node.get("message").asText();
-				}
-			} catch (Exception parseException) {
-				log.warn("Toss 오류 응답 JSON 파싱 실패: {}", parseException.getMessage());
 			}
-
-			Map<String, Object> error = new HashMap<>();
-			error.put("code", upstreamCode);
-			error.put("message", upstreamMessage);
-			return ResponseEntity.status(e.getStatusCode()).body(error);
-		} catch (IllegalStateException e) {
-			log.error("Toss 승인 설정/처리 오류 - orderId={}", orderId, e);
-			Map<String, Object> error = new HashMap<>();
-			error.put("code", "TOSS_CONFIRM_CONFIGURATION_ERROR");
-			error.put("message", e.getMessage());
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-		} catch (Exception e) {
-			log.error("Toss 승인 호출 중 오류 - orderId={}", orderId, e);
-			Map<String, Object> error = new HashMap<>();
-			error.put("code", "TOSS_CONFIRM_FAILED");
-			error.put("message", e.getMessage());
-			return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
 		}
-
-		paymentService.markApproved(orderId, paymentKey);
-
-		int periodMonths = resolvePeriodByAmount(amountValue);
-		if (periodMonths <= 0) {
-			Map<String, Object> error = new HashMap<>();
-			error.put("code", "INVALID_PERIOD");
-			error.put("message", "unsupported amount");
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-		}
-		subscriptionService.activateSubscription(payment.getUserNo(), periodMonths);
-
-		Subscription refreshedSubscription = subscriptionService.selectByUserNo(payment.getUserNo());
-		boolean isPremium = refreshedSubscription != null
-			&& "ACTIVE".equalsIgnoreCase(refreshedSubscription.getStatus())
-			&& refreshedSubscription.getEndDate() != null
-			&& refreshedSubscription.getEndDate().after(new Date());
-
-		Map<String, Object> response = new HashMap<>();
-		response.put("status", tossResponse.getOrDefault("status", "DONE"));
-		response.put("paymentKey", tossResponse.getOrDefault("paymentKey", paymentKey));
-		response.put("orderId", tossResponse.getOrDefault("orderId", orderId));
-		response.put("amount", tossResponse.getOrDefault("totalAmount", amountValue));
-		response.put("isPremium", isPremium);
-		response.put("endDate", refreshedSubscription != null && refreshedSubscription.getEndDate() != null
-			? refreshedSubscription.getEndDate().toInstant().toString()
-			: null);
-		return ResponseEntity.ok(response);
 	}
 
 	// 결제 웹훅 수신

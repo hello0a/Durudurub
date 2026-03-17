@@ -18,7 +18,7 @@ export function PaymentSuccessPage({ onGoHome, onGoMyPage }: PaymentSuccessPageP
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('결제를 승인하는 중입니다.');
   const [errorCode, setErrorCode] = useState<string | null>(null);
-  const { user, setUser } = useApp();
+  const { setUser } = useApp();
 
   const searchParams = useMemo(() => new URLSearchParams(window.location.search), []);
 
@@ -52,15 +52,21 @@ export function PaymentSuccessPage({ onGoHome, onGoMyPage }: PaymentSuccessPageP
             return;
           }
 
-          if (user && typeof response.data?.isPremium !== 'undefined') {
-            const nextUser = {
-              ...user,
-              isPremium: Boolean(response.data.isPremium),
-              premiumEndDate: response.data?.endDate || null,
-            };
+          if (typeof response.data?.isPremium !== 'undefined') {
+            setUser((prevUser) => {
+              if (!prevUser) {
+                return prevUser;
+              }
 
-            setUser(nextUser);
-            sessionStorage.setItem('user', JSON.stringify(nextUser));
+              const nextUser = {
+                ...prevUser,
+                isPremium: Boolean(response.data.isPremium),
+                premiumEndDate: response.data?.endDate || null,
+              };
+
+              sessionStorage.setItem('user', JSON.stringify(nextUser));
+              return nextUser;
+            });
           }
 
           const isAlreadyConfirmed = Boolean(response.data?.alreadyConfirmed);
@@ -104,7 +110,7 @@ export function PaymentSuccessPage({ onGoHome, onGoMyPage }: PaymentSuccessPageP
     return () => {
       cancelled = true;
     };
-  }, [searchParams, setUser, user]);
+  }, [searchParams, setUser]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
