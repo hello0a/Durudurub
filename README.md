@@ -278,20 +278,23 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService{
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) {
 
+        // 1. 기본 OAuth2User 정보 가져오기 (구글/카카오/네이버에서 받아옴)
         OAuth2User oAuth2User = super.loadUser(userRequest);
         User user = null;
 
+        // 2. 각 provider마다 유저를 구분하는 key 값
         String userNameAttributeName = userRequest.getClientRegistration()
                                      .getProviderDetails()
                                      .getUserInfoEndpoint()
                                      .getUserNameAttributeName();
 
+        // 3. 어떤 소셜 로그인인지 구분 (google / naver / kakao)
         String provider = userRequest.getClientRegistration().getRegistrationId();
 
-        // 읽기 전용 에러
+        // 4. OAuth2User의 attributes는 읽기 전용이므로, 수정 가능한 Map 복사
         Map<String,Object> attributes = new HashMap<>(oAuth2User.getAttributes());
 
-        // provider 별 정보 파싱
+        // 5. provider별 파싱 클래스 (데이터 구조 차이)
         OAuth2UserInfo userInfo;
 
         if (provider.equals("google")) {
@@ -302,57 +305,61 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService{
             userInfo = new KakaoUserInfo(attributes);
         }
 
-        // DB 회원 확인
+        // 6. 이미 가입된 회원인지 DB 조회
         user = userService.findByProviderAndProviderId(userInfo.getProvider(), userInfo.getProviderId()); 
 
         // 회원가입
-        // 1. 회원 없으면 자동 가입
+        // 7. 회원 없으면 자동 회원가입
         if (user == null) {
             user = new User();
 
-            // 2. 소셜 이메일 중복 방지
+            // 8. 소셜 로그인 전용 userId 생성 - 소셜 이메일 중복 방지
             String socialUserId = 
                 userInfo.getProvider() + "_" + userInfo.getProviderId();
 
-            // 3. 네이버 오류 방지
+            // 9. username(닉네임) 설정
+            // : 네이버 이름(null) - 예외 처리
             String username = userInfo.getUserName();
             
             if (username == null || username.isBlank()) {
                 username = userInfo.getProvider() + "_" + userInfo.getProviderId();
             }
 
-            // 닉네임 중복 체크
+            // 10. 닉네임 중복 체크 - 이미 존재하면 랜덤 숫자 추가
             if (userService.existsByUsername(username)) {
                 username = username + "_" + (int)(Math.random() * 10000);
             }
-            
-            user.setUserId(socialUserId);
-            user.setUsername(username);
-            // user.setUsername(userInfo.getUserName());
-            user.setProvider(userInfo.getProvider());
-            user.setProviderId(userInfo.getProviderId());
 
-            // 임의 password 추가
-            // : null 발생 시 BCrype 에러 방지
+            // 11. 사용자 정보 세팅
+            user.setUserId(socialUserId);  // 내부 식별 ID
+            user.setUsername(username);    // 닉네임 - (원래는 name이지만, userDto에 맞춤)
+            user.setProvider(userInfo.getProvider());  // google, kakao, naver
+            user.setProviderId(userInfo.getProviderId());  // 소셜 고유 ID
+
+            // 12. 임의 password 추가
+            // : null 발생 시 BCrype 에러 방지 - 소셜 로그인은 비밀번호 없음
             user.setPassword("SOCIAL_LOGIN_USER");
 
+            // 13. DB 저장
             userService.insert(user);
         }
 
-        // JWT 생성용 userId
-        // 읽기 전용 Map - 에러
+        // 14. JWT 생성 시 사용하기 위한 userId를 attribute에 추가
+        // - Map은 읽기 전용으로, 위에서 복사한 Map 사용
         attributes.put("userId", user.getUserId());
 
-        // Security 로그인 처리 (권한)
+        // 15. Spring Security 인증 객체 생성
         DefaultOAuth2User result = new DefaultOAuth2User(
-                                        Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),
-                                        attributes,
-                                        userNameAttributeName);
+                                        Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),  // 권한
+                                        attributes,  // 사용자 정보
+                                        userNameAttributeName);  // 사용자 식별 키
 
+        // 16. 로그 출력 (디버깅용)
         System.out.println("provider = " + userInfo.getProvider());
         System.out.println("providerId = " + userInfo.getProviderId());
         System.out.println("user = " + user);
 
+        // 17. Security에 사용자 정보 반환
         return result;
     }
 }
