@@ -599,6 +599,7 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
   <img src="./durudurub/uploads/figma/notice2.PNG" width="720" alt="공지사항2"><br>
   <img src="./durudurub/uploads/figma/notice3.PNG" width="720" alt="공지사항3">
 </details>
+<br>
 
 ### 관리자 페이지
 <details>
