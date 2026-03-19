@@ -28,7 +28,7 @@ export function MiniGamePage({ onBack, user, accessToken, onSignupClick, onLogin
   const [currentGame, setCurrentGame] = useState<GameType>('menu');
   const [showAdModal, setShowAdModal] = useState(false);
   const [adShown, setAdShown] = useState(false);
-  const [adTimer, setAdTimer] = useState(15);
+  const [adTimer, setAdTimer] = useState(3);
 
   const gameCards = [
     {
@@ -61,9 +61,6 @@ export function MiniGamePage({ onBack, user, accessToken, onSignupClick, onLogin
     useEffect(() => {
       const loadBanners = async () => {
         try {
-        // const token = sessionStorage.getItem('accessToken');
-        // const headers: Record<string, string> = {};
-        // if (token) headers['Authorization'] = `Bearer ${token}`;
           const res = await fetch('/api/banners');
           const data = await res.json();
           setBanners(
@@ -82,10 +79,14 @@ export function MiniGamePage({ onBack, user, accessToken, onSignupClick, onLogin
   
     useEffect(() => {
       if (!banners.length) return;
+      const isAdmin = user?.isAdmin || user?.userId === 'admin';
+      const isPremium = user?.isPremium || false;
+
+      // 🚨 여기 추가
+      if (isAdmin || isPremium) return;
       
       const popupBanners = banners.filter(
         b => b.position === 'POPUP' && b.isActive
-        // b => b.position === 'MAIN' && b.isActive
       );
   
       if (popupBanners.length === 0) return;

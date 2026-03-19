@@ -122,7 +122,7 @@ export function CommunityDetailPage({
   const [memberStatus, setMemberStatus] = useState<'none' | 'pending' | 'approved'>('none');
   const [showMemberOnlyModal, setShowMemberOnlyModal] = useState(false);
   const [showAdModal, setShowAdModal] = useState(false);
-  const [adTimer, setAdTimer] = useState(15);
+  const [adTimer, setAdTimer] = useState(3);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportTargetUser, setReportTargetUser] = useState<string>('');
   const [reportReason, setReportReason] = useState<string>('');
@@ -183,9 +183,6 @@ export function CommunityDetailPage({
   useEffect(() => {
     const loadBanners = async () => {
       try {
-      // const token = sessionStorage.getItem('accessToken');
-      // const headers: Record<string, string> = {};
-      // if (token) headers['Authorization'] = `Bearer ${token}`;
         const res = await fetch('/api/banners');
         const data = await res.json();
         setBanners(
@@ -207,14 +204,12 @@ export function CommunityDetailPage({
     
     const popupBanners = banners.filter(
       b => b.position === 'POPUP' && b.isActive
-      // b => b.position === 'MAIN' && b.isActive
     );
 
     if (popupBanners.length === 0) return;
 
     const randomIndex = Math.floor(Math.random() * popupBanners.length);
     setPopupBanner(popupBanners[randomIndex]);
-    setShowAdModal(true);
   }, [banners]);
 
   // 지나간 일정 자동 삭제
