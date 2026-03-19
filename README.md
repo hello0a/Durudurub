@@ -575,10 +575,11 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
   <summary>마이페이지 화면 보기</summary>
   
   <img src="./durudurub/uploads/figma/my1.PNG" width="720" alt="마이페이지1"><br>
-  <img src="./durudurub/uploads/figma/my5.PNG" width="720" alt="마이페이지2"><br>
-  <img src="./durudurub/uploads/figma/my2.PNG" width="720" alt="마이페이지3"><br>
-  <img src="./durudurub/uploads/figma/my3.PNG" width="720" alt="마이페이지4"><br>
-  <img src="./durudurub/uploads/figma/my4.PNG" width="720" alt="마이페이지5">
+  <img src="./durudurub/uploads/figma/my2.PNG" width="720" alt="마이페이지2"><br>
+  <img src="./durudurub/uploads/figma/my3.PNG" width="720" alt="마이페이지3"><br>
+  <img src="./durudurub/uploads/figma/my4.PNG" width="720" alt="마이페이지4"><br>
+  <img src="./durudurub/uploads/figma/my5.PNG" width="720" alt="마이페이지5"><br>
+  <img src="./durudurub/uploads/figma/myFavorite.PNG" width="720" alt="마이페이지6">
 </details>
 <br>
 
