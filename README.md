@@ -266,6 +266,104 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 }
 ```
+
+```java
+// 소셜 로그인 커스터마이징을 위한 필수 클래스
+@Service
+@RequiredArgsConstructor
+public class CustomOAuth2UserService extends DefaultOAuth2UserService{
+    
+    private final UserService userService;
+
+    @Override
+    public OAuth2User loadUser(OAuth2UserRequest userRequest) {
+
+        // 1. 기본 OAuth2User 정보 가져오기 (구글/카카오/네이버에서 받아옴)
+        OAuth2User oAuth2User = super.loadUser(userRequest);
+        User user = null;
+
+        // 2. 각 provider마다 유저를 구분하는 key 값
+        String userNameAttributeName = userRequest.getClientRegistration()
+                                     .getProviderDetails()
+                                     .getUserInfoEndpoint()
+                                     .getUserNameAttributeName();
+
+        // 3. 어떤 소셜 로그인인지 구분 (google / naver / kakao)
+        String provider = userRequest.getClientRegistration().getRegistrationId();
+
+        // 4. OAuth2User의 attributes는 읽기 전용이므로, 수정 가능한 Map 복사
+        Map<String,Object> attributes = new HashMap<>(oAuth2User.getAttributes());
+
+        // 5. provider별 파싱 클래스 (데이터 구조 차이)
+        OAuth2UserInfo userInfo;
+
+        if (provider.equals("google")) {
+            userInfo = new GoogleUserInfo(attributes);
+        } else if (provider.equals("naver")) {
+            userInfo = new NaverUserInfo(attributes);
+        } else {
+            userInfo = new KakaoUserInfo(attributes);
+        }
+
+        // 6. 이미 가입된 회원인지 DB 조회
+        user = userService.findByProviderAndProviderId(userInfo.getProvider(), userInfo.getProviderId()); 
+
+        // 회원가입
+        // 7. 회원 없으면 자동 회원가입
+        if (user == null) {
+            user = new User();
+
+            // 8. 소셜 로그인 전용 userId 생성 - 소셜 이메일 중복 방지
+            String socialUserId = 
+                userInfo.getProvider() + "_" + userInfo.getProviderId();
+
+            // 9. username(닉네임) 설정
+            // : 네이버 이름(null) - 예외 처리
+            String username = userInfo.getUserName();
+            
+            if (username == null || username.isBlank()) {
+                username = userInfo.getProvider() + "_" + userInfo.getProviderId();
+            }
+
+            // 10. 닉네임 중복 체크 - 이미 존재하면 랜덤 숫자 추가
+            if (userService.existsByUsername(username)) {
+                username = username + "_" + (int)(Math.random() * 10000);
+            }
+
+            // 11. 사용자 정보 세팅
+            user.setUserId(socialUserId);  // 내부 식별 ID
+            user.setUsername(username);    // 닉네임 - (원래는 name이지만, userDto에 맞춤)
+            user.setProvider(userInfo.getProvider());  // google, kakao, naver
+            user.setProviderId(userInfo.getProviderId());  // 소셜 고유 ID
+
+            // 12. 임의 password 추가
+            // : null 발생 시 BCrype 에러 방지 - 소셜 로그인은 비밀번호 없음
+            user.setPassword("SOCIAL_LOGIN_USER");
+
+            // 13. DB 저장
+            userService.insert(user);
+        }
+
+        // 14. JWT 생성 시 사용하기 위한 userId를 attribute에 추가
+        // - Map은 읽기 전용으로, 위에서 복사한 Map 사용
+        attributes.put("userId", user.getUserId());
+
+        // 15. Spring Security 인증 객체 생성
+        DefaultOAuth2User result = new DefaultOAuth2User(
+                                        Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),  // 권한
+                                        attributes,  // 사용자 정보
+                                        userNameAttributeName);  // 사용자 식별 키
+
+        // 16. 로그 출력 (디버깅용)
+        System.out.println("provider = " + userInfo.getProvider());
+        System.out.println("providerId = " + userInfo.getProviderId());
+        System.out.println("user = " + user);
+
+        // 17. Security에 사용자 정보 반환
+        return result;
+    }
+}
+```
 </details>
 
 ### 6-2. React Context 기반 인증 상태 관리
@@ -522,7 +620,7 @@ public ResponseEntity<Map<String, Object>> confirmPayment(@RequestBody Map<Strin
 
 **안영아**
 > - MVC 구조에 대한 전반적인 시스템을 이번 프로젝트에 적용하여 흐름에 대한 이해도를 높였으며, REST API와 AJAX를 중점으로 비동기 UI 처리 구조를 구현하여 자연스러운 화면 전환이 되는 서비스를 제공할 수 있었습니다.
-> - 복잡해진 JS로 인해 다소 어려움이 있어서 체계적인 코드 설계에 대한 보완점을 알게 되었습니다.
+> - Spring Security OAuth 2.0 기반으로 구현한 소셜 로그인 기능에 대한 전체 흐름을 새롭게 알게 되었고, 각 소셜마다 반환되는 JSON 구조가 달라 OAuthUserInfo 인터페이스와 provider별 구현체를 통해 설계하였습니다. 향후 유지보수성과 확장성을 보완하는 방향으로 구조를 개선하고, OAuth를 직접 구현해보는 연습을 통해 인증 시스템에 대한 이해도를 심화하고 싶다는 생각이 들었습니다.
 
 **김현수**
 > - Spring Boot 기반으로 회원가입, 로그인 기능과 권한 부여 구조를 직접 구현했으며, Security 설정 과정에서 시행착오를 겪었지만 계층 구조를 명확히 분리하며 좀 더 안정적으로 구조를 설계할 수 있었습니다.

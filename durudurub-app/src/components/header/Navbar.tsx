@@ -529,18 +529,18 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
   };
 
   // 프로필 이미지 또는 닉네임 글자 렌더링
-  const renderProfileIcon = () => {
-    if (profileImage) {
-      return (
-        <div
-          className="w-10 h-10 rounded-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${profileImage})` }}
-        ></div>
-      );
-    } else {
-      return <User className="w-10 h-10" />;
-    }
-  };
+  // const renderProfileIcon = () => {
+  //   if (profileImage) {
+  //     return (
+  //       <div
+  //         className="w-10 h-10 rounded-full bg-cover bg-center"
+  //         style={{ backgroundImage: `url(${profileImage})` }}
+  //       ></div>
+  //     );
+  //   } else {
+  //     return <User className="w-10 h-10" />;
+  //   }
+  // };
 
   // 관리자 계정 여부 확인
   const isAdmin = user?.isAdmin === true || user?.userId === 'admin';
@@ -616,7 +616,21 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
                     className="text-gray-700 hover:text-[#00A651] transition-colors flex items-center justify-center"
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   >
-                    {renderProfileIcon()}
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-10 h-10"
+                      >
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
                   </button>
 
                   {/* 드롭다운 메뉴 */}
