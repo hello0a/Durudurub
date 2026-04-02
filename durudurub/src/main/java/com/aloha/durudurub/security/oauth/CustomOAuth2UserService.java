@@ -1,10 +1,14 @@
 package com.aloha.durudurub.security.oauth;
 
-import java.util.Collections;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
@@ -21,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class CustomOAuth2UserService extends DefaultOAuth2UserService{
     
     private final UserService userService;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) {
@@ -83,20 +88,27 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService{
             user.setProvider(userInfo.getProvider());
             user.setProviderId(userInfo.getProviderId());
 
-            // 임의 password 추가
-            // null : BCrype 에러
-            user.setPassword("SOCIAL_LOGIN_USER");
+            // 임의값 password으로 변경 및 권한 조회
+            user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            user.getAuthList();
 
             userService.insert(user);
+            // 신규 가입 후 재조회
+            user = userService.findByProviderAndProviderId(userInfo.getProvider(), userInfo.getProviderId());
         }
 
         // JWT 생성용 userId
         // 읽기 전용 Map - 에러
         attributes.put("userId", user.getUserId());
 
-        // Security 로그인 처리 (권한)
+        // DB에서 가져온 권한 -> GrantedAuthority로 변환
+        Collection<GrantedAuthority> authorities = 
+            user.getAuthList().stream()
+                .map(auth -> new SimpleGrantedAuthority(auth.getAuth()))
+                .collect(Collectors.toList());
+            
         DefaultOAuth2User result = new DefaultOAuth2User(
-                                        Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),
+                                        authorities,
                                         attributes,
                                         userNameAttributeName);
 
