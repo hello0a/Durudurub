@@ -153,7 +153,7 @@ function AISearchModal({
           {!isPremiumUser && remainingSearches === 0 && (
             <div className="mt-6 p-4 bg-purple-50 rounded-xl border border-purple-200">
               <p className="text-sm text-purple-800 text-center">
-                무료 검색 횟수를 모두 사용했습니다.{' '}
+                무료 검색 횟수를 모두 사용했습니다.
                 <button
                   onClick={() => {
                     onClose();

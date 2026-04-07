@@ -42,10 +42,9 @@ export function WheelSpinnerGame() {
     const centerY = canvas.height / 2;
     const radius = Math.min(centerX, centerY) - 20;
 
-    // 캔 ��기화
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 회전 적용
+    // 회전
     ctx.save();
     ctx.translate(centerX, centerY);
     ctx.rotate((rotation * Math.PI) / 180);
@@ -58,7 +57,6 @@ export function WheelSpinnerGame() {
       const startAngle = index * anglePerSegment - Math.PI / 2;
       const endAngle = startAngle + anglePerSegment;
 
-      // 세그먼트 채우기
       ctx.beginPath();
       ctx.moveTo(centerX, centerY);
       ctx.arc(centerX, centerY, radius, startAngle, endAngle);
@@ -93,13 +91,13 @@ export function WheelSpinnerGame() {
     ctx.lineWidth = 4;
     ctx.stroke();
 
-    // 화살표 (상단 고정)
+    // 화살표
     ctx.save();
     ctx.fillStyle = '#00A651';
     ctx.beginPath();
-    ctx.moveTo(centerX, 10);
-    ctx.lineTo(centerX - 15, 40);
-    ctx.lineTo(centerX + 15, 40);
+    ctx.moveTo(centerX - 15, 10);
+    ctx.lineTo(centerX + 15, 10);
+    ctx.lineTo(centerX, 40);
     ctx.closePath();
     ctx.fill();
     ctx.strokeStyle = '#ffffff';
@@ -114,7 +112,7 @@ export function WheelSpinnerGame() {
     setIsSpinning(true);
     setResult(null);
 
-    // 랜덤 회전 각도 (최소 5바퀴 + 랜덤)
+    // 랜덤 회전 각도
     const minSpins = 5;
     const randomDegrees = Math.random() * 360;
     const totalRotation = minSpins * 360 + randomDegrees;
@@ -139,7 +137,7 @@ export function WheelSpinnerGame() {
         // 최종 결과 계산
         const finalAngle = newRotation % 360;
         const anglePerSegment = 360 / segments.length;
-        const adjustedAngle = (360 - finalAngle + 90) % 360; // 상단 화살표 기준
+        const adjustedAngle = (360 - finalAngle) % 360; // 상단 화살표 기준
         const winningIndex = Math.floor(adjustedAngle / anglePerSegment) % segments.length;
         
         setResult(segments[winningIndex].label);
@@ -179,6 +177,14 @@ export function WheelSpinnerGame() {
   };
 
   const resetWheel = () => {
+    setSegments([
+      { id: '1', label: '1등', color: '#FF6B6B' },
+      { id: '2', label: '2등', color: '#4ECDC4' },
+      { id: '3', label: '3등', color: '#45B7D1' },
+      { id: '4', label: '4등', color: '#FFA07A' },
+      { id: '5', label: '5등', color: '#98D8C8' },
+      { id: '6', label: '6등', color: '#F7DC6F' },
+    ]);
     setRotation(0);
     setResult(null);
     setIsSpinning(false);

@@ -2,6 +2,9 @@ import { RotateCcw, Plus, Minus, Eye } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 export function LadderGame() {
+  const LADDER_SIDE_PADDING = 80;
+  const DEFAULT_CANVAS_WIDTH = 800;
+
   const [numPlayers, setNumPlayers] = useState(4);
   const [playerNames, setPlayerNames] = useState(['참가자1', '참가자2', '참가자3', '참가자4']);
   const [prizes, setPrizes] = useState(['1등', '2등', '3등', '4등']);
@@ -11,6 +14,11 @@ export function LadderGame() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   const [showRetry, setShowRetry] = useState(false);
   const [canvasHidden, setCanvasHidden] = useState(true);
+  const [boardWidth, setBoardWidth] = useState(DEFAULT_CANVAS_WIDTH);
+  const [isMobileView, setIsMobileView] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 640 : false
+  );
+  const [animatingIndex, setAnimatingIndex] = useState<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
 
@@ -28,7 +36,6 @@ export function LadderGame() {
     setPrizes(newPrizes);
   }, [numPlayers]);
 
-  // 사다리 시뮬레이션 (특정 시작점에서 도착점 계산)
   const simulateLadderPath = (startIndex: number, data: boolean[][]): number => {
     let currentCol = startIndex;
     
@@ -43,7 +50,7 @@ export function LadderGame() {
     return currentCol;
   };
 
-  // 사다리 데이터 생성 (중복 없는 결과 보장)
+  // 사다리 데이터 생성
   const createLadderData = (): boolean[][] => {
     let attempts = 0;
     const maxAttempts = 100;
@@ -98,14 +105,13 @@ export function LadderGame() {
     ctx.strokeStyle = '#00a651';
     ctx.lineWidth = 2;
 
-    const padding = 80;
-    const usableWidth = width - padding * 2;
+    const usableWidth = width - LADDER_SIDE_PADDING * 2;
     const columnSpacing = usableWidth / (numPlayers - 1);
     const rowHeight = height / (data.length + 1);
 
     // 세로선 그리기
     for (let i = 0; i < numPlayers; i++) {
-      const x = padding + i * columnSpacing;
+      const x = LADDER_SIDE_PADDING + i * columnSpacing;
       ctx.beginPath();
       ctx.moveTo(x, 20);
       ctx.lineTo(x, height - 20);
@@ -123,8 +129,8 @@ export function LadderGame() {
       const y = 20 + (rowIndex + 1) * rowHeight;
       row.forEach((hasLine, colIndex) => {
         if (hasLine) {
-          const x1 = padding + colIndex * columnSpacing;
-          const x2 = padding + (colIndex + 1) * columnSpacing;
+          const x1 = LADDER_SIDE_PADDING + colIndex * columnSpacing;
+          const x2 = LADDER_SIDE_PADDING + (colIndex + 1) * columnSpacing;
           ctx.beginPath();
           ctx.moveTo(x1, y);
           ctx.lineTo(x2, y);
@@ -143,12 +149,14 @@ export function LadderGame() {
     setShowRetry(false);
     setIsAutoPlaying(false);
     setCanvasHidden(true);
+    setAnimatingIndex(null);
 
     // 캔버스 초기화
     setTimeout(() => {
       const canvas = canvasRef.current;
       if (canvas) {
         canvas.width = canvas.offsetWidth;
+        setBoardWidth(canvas.offsetWidth);
         canvas.height = 565;
         const ctx = canvas.getContext('2d');
         if (ctx) {
@@ -166,13 +174,15 @@ export function LadderGame() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // 첫 클릭시 캔버스 표시
     if (clickedParticipants.size === 0 && !isAuto) {
       setCanvasHidden(false);
     }
 
-    // 이미 클릭한 참가자는 무시
     if (clickedParticipants.has(startIndex)) {
+      return;
+    }
+
+    if (isMobileView && animatingIndex !== null) {
       return;
     }
 
@@ -180,33 +190,33 @@ export function LadderGame() {
     const newClickedParticipants = new Set(clickedParticipants);
     newClickedParticipants.add(startIndex);
     setClickedParticipants(newClickedParticipants);
+    setAnimatingIndex(startIndex);
 
-    const padding = 80;
-    const usableWidth = canvas.width - padding * 2;
+    const usableWidth = canvas.width - LADDER_SIDE_PADDING * 2;
     const columnSpacing = usableWidth / (numPlayers - 1);
     const rowHeight = canvas.height / (ladderData.length + 1);
 
     let currentCol = startIndex;
-    const path: { x: number; y: number }[] = [{ x: padding + currentCol * columnSpacing, y: 20 }];
+    const path: { x: number; y: number }[] = [{ x: LADDER_SIDE_PADDING + currentCol * columnSpacing, y: 20 }];
 
     // 경로 계산
     ladderData.forEach((row, rowIndex) => {
       const y = 20 + (rowIndex + 1) * rowHeight;
       
       if (currentCol > 0 && row[currentCol - 1]) {
-        path.push({ x: padding + currentCol * columnSpacing, y: y });
+        path.push({ x: LADDER_SIDE_PADDING + currentCol * columnSpacing, y: y });
         currentCol--;
-        path.push({ x: padding + currentCol * columnSpacing, y: y });
+        path.push({ x: LADDER_SIDE_PADDING + currentCol * columnSpacing, y: y });
       } else if (currentCol < numPlayers - 1 && row[currentCol]) {
-        path.push({ x: padding + currentCol * columnSpacing, y: y });
+        path.push({ x: LADDER_SIDE_PADDING + currentCol * columnSpacing, y: y });
         currentCol++;
-        path.push({ x: padding + currentCol * columnSpacing, y: y });
+        path.push({ x: LADDER_SIDE_PADDING + currentCol * columnSpacing, y: y });
       } else {
-        path.push({ x: padding + currentCol * columnSpacing, y: y });
+        path.push({ x: LADDER_SIDE_PADDING + currentCol * columnSpacing, y: y });
       }
     });
 
-    path.push({ x: padding + currentCol * columnSpacing, y: canvas.height - 20 });
+    path.push({ x: LADDER_SIDE_PADDING + currentCol * columnSpacing, y: canvas.height - 20 });
 
     // 애니메이션
     let step = 0;
@@ -227,6 +237,7 @@ export function LadderGame() {
         // 애니메이션 완료
         const participantName = playerNames[startIndex];
         const prize = prizes[currentCol];
+        setAnimatingIndex(null);
         
         setResults(prev => [...prev, { player: participantName, prize }]);
 
@@ -286,15 +297,74 @@ export function LadderGame() {
     setShowRetry(false);
     setIsAutoPlaying(false);
     setCanvasHidden(true);
+    setAnimatingIndex(null);
 
     // 새 사다리 생성
     const newLadderData = createLadderData();
     setLadderData(newLadderData);
 
     canvas.width = canvas.offsetWidth;
+    setBoardWidth(canvas.offsetWidth);
     canvas.height = 565;
     drawLadder(ctx, canvas.width, canvas.height, newLadderData);
   };
+
+  const getLineX = (index: number) => {
+    const width = boardWidth || DEFAULT_CANVAS_WIDTH;
+    if (numPlayers <= 1) return width / 2;
+    const usableWidth = width - LADDER_SIDE_PADDING * 2;
+    const columnSpacing = usableWidth / (numPlayers - 1);
+    return LADDER_SIDE_PADDING + index * columnSpacing;
+  };
+
+  const markerWidth = (() => {
+    const width = boardWidth || DEFAULT_CANVAS_WIDTH;
+    if (numPlayers <= 1) return 120;
+    const usableWidth = width - LADDER_SIDE_PADDING * 2;
+    const spacing = usableWidth / (numPlayers - 1);
+    return Math.max(72, Math.min(140, spacing * 0.9));
+  })();
+
+  useEffect(() => {
+    if (ladderData.length === 0) return;
+
+    const handleResize = () => {
+      const canvas = canvasRef.current;
+      setIsMobileView(window.innerWidth < 640);
+      if (!canvas) return;
+
+      canvas.width = canvas.offsetWidth;
+      setBoardWidth(canvas.offsetWidth);
+      canvas.height = 565;
+
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        drawLadder(ctx, canvas.width, canvas.height, ladderData);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [ladderData, numPlayers]);
+
+  useEffect(() => {
+    const handleViewportResize = () => {
+      setIsMobileView(window.innerWidth < 640);
+    };
+
+    window.addEventListener('resize', handleViewportResize);
+    return () => window.removeEventListener('resize', handleViewportResize);
+  }, []);
+
+  const nextParticipantIndex = (() => {
+    for (let i = 0; i < numPlayers; i++) {
+      if (!clickedParticipants.has(i)) return i;
+    }
+    return null;
+  })();
+
+  const latestResult = results.length > 0 ? results[results.length - 1] : null;
 
   return (
     <div className="space-y-8">
@@ -399,6 +469,7 @@ export function LadderGame() {
                 setShowRetry(false);
                 setIsAutoPlaying(false);
                 setCanvasHidden(true);
+                setAnimatingIndex(null);
               }}
               className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
             >
@@ -408,27 +479,60 @@ export function LadderGame() {
           </div>
           
           {/* 참가자 버튼 */}
-          <div className="flex flex-wrap justify-center gap-2 mb-4">
-            {playerNames.map((name, i) => (
-              <button
-                key={i}
-                onClick={() => animateLadder(i)}
-                disabled={clickedParticipants.has(i) || isAutoPlaying}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  clickedParticipants.has(i)
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-[#00A651] text-white hover:bg-[#008E41]'
-                } ${isAutoPlaying ? 'cursor-not-allowed opacity-50' : ''}`}
-                style={{
-                  backgroundColor: clickedParticipants.has(i) 
-                    ? participantColors[i % participantColors.length] + '40'
-                    : clickedParticipants.has(i) ? undefined : '#00A651'
-                }}
-              >
-                {name}
-              </button>
-            ))}
-          </div>
+          {isMobileView ? (
+            <div className="mb-4">
+              <div className="rounded-xl border border-[#00A651]/30 bg-[#00A651]/10 p-3 text-center">
+                {animatingIndex !== null ? (
+                  <div className="w-full px-4 py-3 rounded-lg font-bold bg-[#00A651] text-white">
+                    {playerNames[animatingIndex]} 이동 중...
+                  </div>
+                ) : nextParticipantIndex !== null ? (
+                  <button
+                    onClick={() => animateLadder(nextParticipantIndex)}
+                    disabled={isAutoPlaying}
+                    className={`w-full px-4 py-3 rounded-lg font-bold transition-colors ${
+                      isAutoPlaying
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-[#00A651] text-white hover:bg-[#008E41]'
+                    }`}
+                  >
+                    {playerNames[nextParticipantIndex]} 출발
+                  </button>
+                ) : (
+                  <div className="w-full px-4 py-3 rounded-lg font-bold bg-gray-200 text-gray-600">
+                    모든 참가자 완료
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="mb-4 flex justify-center overflow-x-auto">
+              <div className="relative h-10" style={{ width: `${boardWidth}px` }}>
+              {playerNames.map((name, i) => (
+                <button
+                  key={i}
+                  onClick={() => animateLadder(i)}
+                  disabled={clickedParticipants.has(i) || isAutoPlaying}
+                  title={name}
+                  className={`absolute top-0 -translate-x-1/2 px-2 py-2 rounded-lg font-medium transition-all ${
+                    clickedParticipants.has(i)
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-[#00A651] text-white hover:bg-[#008E41]'
+                  } ${isAutoPlaying ? 'cursor-not-allowed opacity-50' : ''}`}
+                  style={{
+                    left: `${getLineX(i)}px`,
+                    width: `${markerWidth}px`,
+                    backgroundColor: clickedParticipants.has(i)
+                      ? participantColors[i % participantColors.length] + '40'
+                      : clickedParticipants.has(i) ? undefined : '#00A651'
+                  }}
+                >
+                  <span className="block w-full truncate text-xs sm:text-sm">{name}</span>
+                </button>
+              ))}
+              </div>
+            </div>
+          )}
 
           {/* 캔버스 */}
           <div className="relative">
@@ -442,29 +546,50 @@ export function LadderGame() {
             />
             {canvasHidden && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-50 border-2 border-gray-200 rounded-xl">
-                <p className="text-gray-500 text-lg">참가자를 선택하여 사다리를 타보세요!</p>
               </div>
             )}
           </div>
 
           {/* 결과 표시 */}
-          <div className="flex flex-wrap justify-center gap-2 mt-4">
-            {prizes.map((prize, i) => {
-              const isWinner = results.some(r => r.prize === prize);
-              return (
-                <div
-                  key={i}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    isWinner
-                      ? 'bg-yellow-400 text-gray-900 animate-pulse'
-                      : 'bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  {prize}
-                </div>
-              );
-            })}
-          </div>
+          {isMobileView ? (
+            <div className="mt-4">
+              <div className="rounded-xl border border-yellow-300 bg-yellow-50 p-3 text-center min-h-[72px] flex items-center justify-center">
+                {latestResult ? (
+                  <div>
+                    <p className="text-xs text-gray-600">결과</p>
+                    <p className="font-bold text-gray-900 mt-1">{latestResult.player} → {latestResult.prize}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">아직 도착한 참가자가 없습니다.</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 flex justify-center overflow-x-auto">
+              <div className="relative h-10" style={{ width: `${boardWidth}px` }}>
+              {prizes.map((prize, i) => {
+                const isWinner = results.some(r => r.prize === prize);
+                return (
+                  <div
+                    key={i}
+                    title={prize}
+                    className={`absolute top-0 -translate-x-1/2 px-2 py-2 rounded-lg font-medium text-center transition-all ${
+                      isWinner
+                        ? 'bg-yellow-400 text-gray-900 animate-pulse'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                    style={{
+                      left: `${getLineX(i)}px`,
+                      width: `${markerWidth}px`,
+                    }}
+                  >
+                    <span className="block w-full truncate text-xs sm:text-sm">{prize}</span>
+                  </div>
+                );
+              })}
+              </div>
+            </div>
+          )}
 
           {/* 결과 메시지 */}
           {results.length > 0 && (
@@ -475,11 +600,6 @@ export function LadderGame() {
                     🎉 {result.player}님의 결과는 "{result.prize}"입니다!
                   </p>
                 ))}
-                {clickedParticipants.size === numPlayers && (
-                  <p className="text-lg font-bold text-[#00A651] mt-4">
-                    ✅ 모든 참가자의 결과가 확인되었습니다!
-                  </p>
-                )}
               </div>
             </div>
           )}

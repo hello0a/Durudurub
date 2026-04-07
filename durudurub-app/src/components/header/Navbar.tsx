@@ -170,7 +170,6 @@ function AISearchModal({
             </div>
           </form>
 
-          {/* 검색 전 안내 텍스트 */}
           {!hasSearched && !isLoading && (
             <p className="text-gray-600 text-center mt-4">원하는 모임을 검색하세요!</p>
           )}
@@ -187,7 +186,7 @@ function AISearchModal({
           {!isPremiumUser && remaining === 0 && (
             <div className="mt-6 p-4 bg-purple-50 rounded-xl border border-purple-200">
               <p className="text-sm text-purple-800 text-center">
-                무료 검색 횟수를 모두 사용했습니다.{' '}
+                무료 검색 횟수를 모두 사용했습니다.
                 <button
                   onClick={() => {
                     onClose();
@@ -287,12 +286,14 @@ function AISearchModal({
   );
 }
 
-// 구독 모달 컴포넌트
 function SubscriptionModal({ onClose, onPaymentClick }: { onClose: () => void; onPaymentClick?: () => void }) {
+  const navigate = useNavigate();
   const handleSubscribe = () => {
     onClose();
     if (onPaymentClick) {
       onPaymentClick();
+    } else {
+      navigate('/payment');
     }
   };
 
@@ -366,7 +367,6 @@ function SubscriptionModal({ onClose, onPaymentClick }: { onClose: () => void; o
   );
 }
 
-// 로그인 유도 모달 컴포넌트
 function LoginRequiredModal({ onClose, onLoginClick }: { onClose: () => void; onLoginClick?: () => void }) {
   const handleLogin = () => {
     onClose();
@@ -454,8 +454,12 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
 
-  // 구독 여부 확인 (user 객체에 isPremium 또는 subscription 필드가 있다고 가정)
   const isPremiumUser = user?.isPremium === true || user?.subscription === 'premium';
+
+  useEffect(() => {
+    setAiSearchCount(0);
+    setShowSubscriptionModal(false);
+  }, [user?.id]);
 
   // 일반 검색 핸들러
   const handleSearch = (e: React.FormEvent) => {
@@ -468,7 +472,6 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
 
   // AI 검색 핸들러
   const handleAISearch = (query: string) => {
-    // 구독하지 않은 유저의 경우 3회 제한
     if (!isPremiumUser && aiSearchCount >= 3) {
       setShowSubscriptionModal(true);
       return;
@@ -476,7 +479,6 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
 
     console.log('AI 검색:', query);
     
-    // AI 검색 횟수 증가 (구독 유저가 아닌 경우만)
     if (!isPremiumUser) {
       setAiSearchCount(prev => prev + 1);
     }
@@ -487,7 +489,6 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
 
   // AI 검색 버튼 클릭 핸들러
   const openAISearchModal = () => {
-    // 미로그인 유저가 AI 검색을 하려고 하면 로그인 유도 모달 표시
     if (!user) {
       setShowLoginRequiredModal(true);
       return;
@@ -498,10 +499,8 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
   const handleUserMenuClick = (action: string) => {
 
     if (!user) {
-      // 로그인이 안 되어 있으면 회원가입 페이지로
       onSignupClick?.();
     } else {
-      // 로그인이 되어 있으면 각 액션 실행
       if (action === 'logout') {
         onLogout?.();
       } else if (action === 'mypage') {
@@ -586,7 +585,6 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
 
           {/* 오른쪽 메뉴 */}
           <div className="hidden md:flex items-center space-x-6">
-            {/* 미니 게임 버튼 (모든 사용자에게 표시) */}
             <button
               className="text-lg border-2 border-[#00A651] text-[#00A651] px-6 py-2.5 rounded-full hover:bg-[#00A651] hover:text-white transition-colors font-medium flex items-center gap-2"
               onClick={onMiniGameClick}
@@ -802,11 +800,8 @@ export function Navbar({ onSignupClick, onLoginClick, onLogoClick, onNoticeClick
         )}
       </div>
 
-      {/* AI 검색 모달 */}
       {showAISearchModal && <AISearchModal onClose={() => setShowAISearchModal(false)} onSearch={handleAISearch} isPremiumUser={isPremiumUser} aiSearchCount={aiSearchCount} onPaymentClick={onPaymentClick} onCommunityClick={onCommunityClick} onUpdateSearchCount={(r) => setAiSearchCount(3 - r)} />}
-      {/* 구독 유도 모달 */}
-      {showSubscriptionModal && <SubscriptionModal onClose={() => setShowSubscriptionModal(false)} onPaymentClick={onPaymentClick} />}
-      {/* 로그인 유도 모달 */}
+      {showSubscriptionModal && <SubscriptionModal onClose={() => setShowSubscriptionModal(false)} onPaymentClick={() => { setShowAISearchModal(false); onPaymentClick?.(); }} />}
       {showLoginRequiredModal && <LoginRequiredModal onClose={() => setShowLoginRequiredModal(false)} onLoginClick={onLoginClick} />}
       </nav>
     </>

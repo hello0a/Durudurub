@@ -55,16 +55,15 @@ export function WinnerDrawGame() {
     const availableParticipants = [...participants];
     const selectedWinners: Participant[] = [];
 
-    // 애니메이션을 위한 순차 추첨
+    // 애니메이션
     for (let i = 0; i < numWinners; i++) {
-      // 빠른 롤링 효과 (20번)
       for (let j = 0; j < 20; j++) {
         const randomIndex = Math.floor(Math.random() * availableParticipants.length);
         setCurrentDrawing(availableParticipants[randomIndex].name);
         await new Promise(resolve => setTimeout(resolve, 50));
       }
 
-      // 최종 당첨자 선택
+      // 최종 당첨자
       const winnerIndex = Math.floor(Math.random() * availableParticipants.length);
       const winner = availableParticipants[winnerIndex];
       selectedWinners.push(winner);
@@ -93,7 +92,12 @@ export function WinnerDrawGame() {
   const clearAll = () => {
     setParticipants([
       { id: '1', name: '참가자1' },
+      { id: '2', name: '참가자2' },
+      { id: '3', name: '참가자3' },
+      { id: '4', name: '참가자4' },
+      { id: '5', name: '참가자5' },
     ]);
+    setNumWinners(1);
     reset();
   };
 
@@ -131,7 +135,7 @@ export function WinnerDrawGame() {
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     <p className="text-2xl font-bold text-white">
-                      {numWinners > 1 ? `${index + 1}등: ` : ''}{winner.name}
+                      {winner.name}
                     </p>
                   </div>
                 ))}
@@ -180,10 +184,10 @@ export function WinnerDrawGame() {
               </button>
               <button
                 onClick={clearAll}
-                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
               >
-                <Trash2 className="w-4 h-4" />
-                전체 삭제
+                <RotateCcw className="w-4 h-4" />
+                초기화
               </button>
             </div>
           </div>

@@ -34,7 +34,6 @@ export function PaymentPage({
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // 구독 플랜 정보
   const plans = {
     '1month': { duration: '1개월', period: 1, price: 4900, discount: 0 },
     '3months': { duration: '3개월', period: 3, price: 13200, discount: 10, originalPrice: 14700 },
@@ -49,7 +48,6 @@ export function PaymentPage({
       return;
     }
 
-    // 약관 동의 확인
     if (!agreeTerms || !agreePrivacy) {
       toast.error('약관 동의를 확인해주세요.');
       return;
@@ -57,7 +55,7 @@ export function PaymentPage({
 
     setIsProcessing(true);
 
-    // 결제 처리 시뮬레이션 (실제로는 결제 API 호출)
+    // API호출
     try {
       const orderResponse = await api.post('/payments/order', {
         period: selectedPlanInfo.period,
@@ -82,7 +80,6 @@ export function PaymentPage({
         },
         orderId,
         orderName,
-        // 여기 수정해야함!!!
         successUrl: `${window.location.origin}/payment/success`,
         failUrl: `${window.location.origin}/payment/fail`,
         customerEmail: user.email,
@@ -158,7 +155,6 @@ export function PaymentPage({
           <h3 className="text-lg font-bold text-gray-900 mb-4">구독 기간 선택</h3>
           
           <div className="grid grid-cols-1 gap-3">
-            {/* 1개월 플랜 */}
             <button
               onClick={() => setSelectedPlan('1month')}
               className={`relative p-4 rounded-lg border-2 transition-all text-left ${
@@ -180,7 +176,6 @@ export function PaymentPage({
               </div>
             </button>
 
-            {/* 3개월 플랜 */}
             <button
               onClick={() => setSelectedPlan('3months')}
               className={`relative p-4 rounded-lg border-2 transition-all text-left ${
@@ -211,7 +206,6 @@ export function PaymentPage({
               </div>
             </button>
 
-            {/* 6개월 플랜 */}
             <button
               onClick={() => setSelectedPlan('6months')}
               className={`relative p-4 rounded-lg border-2 transition-all text-left ${
