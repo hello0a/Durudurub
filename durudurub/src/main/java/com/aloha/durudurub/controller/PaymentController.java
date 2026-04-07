@@ -288,7 +288,6 @@ public class PaymentController {
 	@PostMapping("/payments/webhook")
 	@ResponseBody
 	public ResponseEntity<Map<String, Object>> webhook(@RequestBody Map<String, Object> payload) {
-		// TODO: 이벤트 검증 + DB 반영
 		log.info("webhook payload: {}", payload);
 		Map<String, Object> response = new HashMap<>();
 		response.put("result", "OK");
