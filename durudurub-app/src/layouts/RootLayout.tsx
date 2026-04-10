@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AppProvider } from '@/contexts/AppContext';
 import { Toaster } from 'sonner';
@@ -10,6 +11,10 @@ function RootShell() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profileImage, handleLogout } = useApp();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   const pathname = location.pathname;
   const currentPage = pathname === '/'
