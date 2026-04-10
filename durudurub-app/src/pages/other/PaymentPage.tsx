@@ -107,21 +107,6 @@ export function PaymentPage({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-2xl mx-auto px-4 py-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">프리미엄 구독</h1>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          )}
-        </div>
-      </div>
-
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* 상단 프리미엄 정보 */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6">
@@ -152,7 +137,7 @@ export function PaymentPage({
 
         {/* 구독 기간 선택 */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">구독 기간 선택</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">멤버십 이용권 선택</h3>
           
           <div className="grid grid-cols-1 gap-3">
             <button
@@ -166,7 +151,7 @@ export function PaymentPage({
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-bold text-gray-900">1개월</div>
-                  <div className="text-sm text-gray-600 mt-1">₩4,900 / 월</div>
+                  <div className="text-sm text-gray-600 mt-1">₩4,900</div>
                 </div>
                 {selectedPlan === '1month' && (
                   <div className="w-6 h-6 bg-[#00A651] rounded-full flex items-center justify-center">
@@ -195,7 +180,6 @@ export function PaymentPage({
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-sm text-gray-400 line-through">₩14,700</span>
                     <span className="text-sm font-semibold text-[#00A651]">₩13,200</span>
-                    <span className="text-xs text-gray-500">(월 ₩4,400)</span>
                   </div>
                 </div>
                 {selectedPlan === '3months' && (
@@ -225,7 +209,6 @@ export function PaymentPage({
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-sm text-gray-400 line-through">₩29,400</span>
                     <span className="text-sm font-semibold text-[#00A651]">₩23,520</span>
-                    <span className="text-xs text-gray-500">(월 ₩3,920)</span>
                   </div>
                 </div>
                 {selectedPlan === '6months' && (
@@ -293,9 +276,9 @@ export function PaymentPage({
           )}
         </button>
 
-        <p className="text-xs text-gray-500 text-center mt-4">
+        {/* <p className="text-xs text-gray-500 text-center mt-4">
           {selectedPlan === '1month' ? '결제 시 매월 자동 갱신됩니다.' : `${selectedPlanInfo.duration} 구독 후 자동 갱신됩니다.`}
-        </p>
+        </p> */}
       </div>
       <Toaster position="top-center" richColors />
     </div>

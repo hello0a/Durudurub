@@ -194,7 +194,7 @@ function AISearchModal({
                   }}
                   className="font-semibold underline hover:text-purple-600"
                 >
-                  프리미엄 구독하기
+                  멤버십 가입하기
                 </button>
               </p>
             </div>
@@ -318,12 +318,12 @@ function SubscriptionModal({ onClose, onPaymentClick }: { onClose: () => void; o
           </h2>
           <p className="text-gray-600 mb-6">
             무료 AI 검색 3회를 모두 사용하셨습니다.<br />
-            프리미엄 구독으로 무제한 AI 검색을 이용해보세요!
+            멤버십을 가입하여 무제한 AI 검색을 이용해보세요!
           </p>
 
           {/* 프리미엄 혜택 */}
           <div className="bg-purple-50 rounded-xl p-6 mb-6 text-left">
-            <h3 className="font-semibold text-purple-900 mb-3">프리미엄 혜택</h3>
+            <h3 className="font-semibold text-purple-900 mb-3">멤버십 혜택</h3>
             <ul className="space-y-2 text-sm text-purple-800">
               <li className="flex items-start">
                 <span className="text-purple-500 mr-2">✓</span>

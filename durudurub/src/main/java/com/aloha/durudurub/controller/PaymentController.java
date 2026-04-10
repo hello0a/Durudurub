@@ -329,7 +329,7 @@ public class PaymentController {
 
 		int amount = resolveAmountByPeriod(period);
 		String orderId = generateOrderId();
-		String orderName = "AI검색 구독권";
+		String orderName = "프리미엄 멤버십";
 
 		try {
 			paymentService.createOrder(user.getNo(), orderId, orderName, amount);

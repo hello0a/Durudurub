@@ -362,7 +362,7 @@ public class MypageApiController {
         return ResponseEntity.ok(favoriteClubs);
     }
 
-    // ==================토스 페이먼츠 : 구독 상태 동기화
+    // ==================토스 페이먼츠 : 멤버십 상태 동기화
     @GetMapping("/api/subscription")
     public ResponseEntity<Map<String, Object>> getSubscriptionStatus(Principal principal) {
         if (principal == null) {

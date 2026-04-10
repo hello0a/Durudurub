@@ -353,11 +353,11 @@ export function MyPage({
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 bg-white/90 rounded-full"></div>
-                        <span className="text-white/90">프리미엄 배지</span>
+                        <span className="text-white/90">멤버십 배지</span>
                       </div>
                     </div>
                     <div className="mt-4 pt-4 border-t border-white/20">
-                      <p className="text-xs text-white/70">다음 결제일</p>
+                      <p className="text-xs text-white/70">만료일</p>
                       <p className="text-sm font-semibold">{formattedNextPaymentDate}</p>
                     </div>
                   </div>
@@ -382,7 +382,7 @@ export function MyPage({
                       </div>
                     </div>
                     <button className="w-full bg-white text-[#00A651] font-bold py-3 rounded-xl hover:bg-white/90 transition-colors shadow-lg mt-2" onClick={onPaymentClick}>
-                      프리미엄 구독하기
+                     멤버십 가입하기
                     </button>
                   </div>
                 )}

@@ -161,7 +161,7 @@ function AISearchModal({
                   }}
                   className="font-semibold underline hover:text-purple-600"
                 >
-                  프리미엄 구독하기
+                  멤버십 가입하기
                 </button>
               </p>
             </div>
