@@ -1,6 +1,5 @@
 import { ArrowLeft, Bell, Calendar, Eye, Plus, Edit2, Trash2, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 import { toast } from 'sonner';
 
 interface NoticePageProps {
@@ -204,8 +203,8 @@ export function NoticePage({ onBack, user, accessToken, onSignupClick, onLoginCl
 
     try {
       const url = editingNotice
-        ? `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/notices/${editingNotice.noticeNo}`
-        : `https://${projectId}.supabase.co/functions/v1/make-server-12a2c4b5/notices`;
+        ? `/api/admin/notice/${editingNotice.noticeNo}`
+        : `/api/admin/notice`;
 
       console.log('공지사항 작성/수정 요청:', {
         url,

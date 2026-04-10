@@ -29,8 +29,7 @@ import {
 } from 'lucide-react';
 import styles from '@/pages/admin/AdminPage.module.css';
 import { data } from 'react-router-dom';
-// import { projectId, publicAnonKey } from 'utils/supabase/info';
-import { projectId, publicAnonKey } from '../../../utils/supabase/info';
+
 
 interface AdminPageProps {
   onBack: () => void;
@@ -728,7 +727,6 @@ export function AdminPage({
         setCommunities(data || []);
       }
     } catch (error) {
-      // Mock 데이터 사용 (Supabase 연결 실패 시)
       console.log('모임 목록: Mock 데이터 사용 중');
     } finally {
       setLoading(false);
@@ -754,7 +752,6 @@ export function AdminPage({
       }
       console.log("response status", response.status)
     } catch (error) {
-      // Mock 데이터 사용 (Supabase 연결 실패 시)
       console.log('모임 목록: Mock 데이터 사용 중');
     } finally {
       setLoading(false);
@@ -787,7 +784,6 @@ export function AdminPage({
       )
       
     } catch (error) {
-      // Mock 데이터 사용 (Supabase 연결 실패 시)
       console.log('배너 목록: Mock 데이터 사용 중');
     } finally {
       setLoading(false);
